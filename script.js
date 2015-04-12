@@ -17,11 +17,6 @@ $(document).ready(function() {
     var u_x = new Float32Array(n - 1);
     var u_tt = new Float32Array(n - 2);
 
-    // initial condition: all water in right half, zero velocity
-    for (var i = Math.floor(n/2); i < n; i++) {
-        u[i] = 1.0
-    }
-
     requestAnimationFrame(frame);
 
     function frame() {
@@ -58,14 +53,20 @@ $(document).ready(function() {
         // update u_t according to u_tt
         for (var i = 1; i < n - 1; i++) {
             u_t[i] += u_tt[i - 1] * dt;
+            u_t[i] *= 0.999
         }
 
         // update u
         for (var i = 0; i < n; i++) {
             u[i] += u_t[i] * dt;
         }
+
+        // boundary conditions: two-sided "wave pool"
         u[n - 1] = u[n - 2];
-        u[0] = u[1];
+        u[0] = 
+            0.2 * Math.sin(t * 2.0) + 
+            0.3 * Math.sin(t * 2.289) + 
+            1 - Math.exp(-t);
     }
 
     function render() {
