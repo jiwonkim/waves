@@ -16,6 +16,9 @@ $(document).ready(function() {
     var u_t = new Float32Array(n); // velocity at each x
     var u_x = new Float32Array(n - 1);
     var u_tt = new Float32Array(n - 2);
+    for(var i = 0; i < n; i++) {
+        u[i] = Math.cos(0.1 * i) + 1.2 * Math.sin(0.08 * i + 0.2);
+    }
 
     requestAnimationFrame(frame);
 
@@ -63,10 +66,7 @@ $(document).ready(function() {
 
         // boundary conditions: two-sided "wave pool"
         u[n - 1] = u[n - 2];
-        u[0] = 
-            0.2 * Math.sin(t * 2.0) + 
-            0.3 * Math.sin(t * 2.289) + 
-            1 - Math.exp(-t);
+        u[0] = u[1];
     }
 
     function render() {
@@ -74,14 +74,17 @@ $(document).ready(function() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         var base = 0.5 * canvas.height - 25;
         var unitWidth = canvas.width / n; // dx per sample in pixels
+        context.beginPath();
+        context.moveTo(0, canvas.height);
         for(var i = 0; i < n; i++) {
             var x = i * unitWidth;
             var h = 50 * u[i];
-            context.fillRect(
-                x, base - h,
-                unitWidth, h
-            );
+
+            context.lineTo(x, base - h);
         }
+        context.lineTo(canvas.width, canvas.height);
+        context.closePath();
+        context.fill();
     };
 });
 
