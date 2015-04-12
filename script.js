@@ -150,17 +150,55 @@ $(document).ready(function() {
     };
 });
 
+/**
+ * Defines a sin wave.
+ * @typedef {Object} WaveSettings
+ * @property {number} amplitude
+ * @property {number} period
+ * @property {number} dampener - the base in an exponential decay function
+ *      that dampenes the amplitude of the wave further from the crest.
+ *      Should be [0, 1] to have a dampening effect; otherwise will amplify.
+ * @property {number} lengthener - the base in an exponential growth function
+ *      that lengthens the period of the wave further from the crest.
+ *      Should be > 1. to have a lengthening effect; otherwise will shorten.
+ * @property {number} crestOffset - the offset of the peak from the given crest,
+ *      used to create a staggered effect for the final wave
+ */
+
+/**
+ * Stores the state of mouse drag.
+ * @typedef {Object} DragState
+ * @property {boolean} isDragging
+ * @property {number} x0 - the initial mouse x, defines the crest
+ * @property {number} y0 - the last mouse y
+ * @property {number} dy - the y velocity
+ */
+
+/**
+ * Defines a single wave with the given settings.
+ * @param {HTMLElement} canvas
+ * @param {number} n - The number of samples
+ * @param {number} waveEquationConstant -  bigger the constant, the
+ *      faster the wave propagates
+ * @param {Array.<WaveSettings>} waveSettings - the final wave is a
+ *      sum of partial waves, defined by these settings
+ */
 var wave = function(canvas, n, waveEquationConstant, waveSettings) {
     var _canvas = canvas,
-        _n = n, // number of samples
+        _n = n,
         _c = waveEquationConstant,
-        _waves = waveSettings; // list of wave settings
+        _waves = waveSettings;
 
     var u = new Float32Array(n); // value of wave at each sample idx
     var u_t = new Float32Array(n); // velocity at each sample idx
     var u_x = new Float32Array(n - 1);
     var u_tt = new Float32Array(n - 2);
 
+    /**
+     * Update the height map according to the wave equation.
+     * @param {number} dt
+     * @param {DragState} dragState
+     */
     var _physics = function(dt, dragState) {
         var dx = 1. / n; // change in x per value in u
 
@@ -208,6 +246,12 @@ var wave = function(canvas, n, waveEquationConstant, waveSettings) {
         }
     };
 
+    /**
+     * Computes the height of the wave at sample i.
+     * @param {number} i - index of the sample to compute the wave height for
+     * @param {nubmer} crestIdx - index of the crest of the wave
+     * @param {WaveSettings} settings
+     */
     var _compute = function(i, crestIdx, settings) {
         var amplitude, period, phaseShift, crestOffset;
         var dampener, lengthener;
@@ -228,7 +272,7 @@ var wave = function(canvas, n, waveEquationConstant, waveSettings) {
         // value of u at i (wave's height)
         return amplitude * Math.sin((2.0 * Math.PI / period) * (i - phaseShift));
     };
-
+ 
     var _heightMap = function() {
         return u;
     };
