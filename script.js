@@ -1,22 +1,26 @@
 
 var settings = {
-    wave_x: 100, // leftmost point in wave
-    wave_y: 200, // vertical midpoint of wave
-    wave_w: 550, // width of wave
-    wave_h: 100, // height of wave - # pixels under wave_y that should be filled in
-    wave_color: '#9af',
-    wave_period: 1, // wave goes up and down once a second
-    max_a: 30 // max wave amplitude in pixels
+    c: 0.2, // wave equation constant
+    color: '#9af'
 }
 
 $(document).ready(function() {
     var canvas = document.getElementById('waves-canvas');
     var context = canvas.getContext('2d');
     var t_0 = new Date().getTime() / 1000;
+    var t = 0;
+    var dt = 0.005; // simulation step size in seconds
 
-    var amplitude;
-    var u = new Float32Array(settings.wave_w); // value of wave at each x
-    var u_t = new Float32Array(settings.wave_w); // velocity at each x
+    var n = 100; // number of samples
+    var u = new Float32Array(n); // value of wave at each x
+    var u_t = new Float32Array(n); // velocity at each x
+    var u_x = new Float32Array(n - 1);
+    var u_tt = new Float32Array(n - 2);
+
+    // initial condition: all water in right half, zero velocity
+    for (var i = Math.floor(n/2); i < n; i++) {
+        u[i] = 1.0
+    }
 
     requestAnimationFrame(frame);
 
@@ -27,21 +31,55 @@ $(document).ready(function() {
     }
 
     function physics() {
-        var t = new Date().getTime() / 1000 - t_0; // time in seconds
-        var max_a = settings.max_a * Math.exp(-t / 2);
-        amplitude = max_a * Math.sin(t / settings.wave_period * 2 * Math.PI);
+        var t_now = new Date().getTime() / 1000 - t_0; // time in seconds
+        while(t < t_now) {
+            physicsStep();
+            t += dt;
+        }
+    }
+
+    function physicsStep() {
+        var dx = 1.0 / n; // change in x per value in u
+
+        // compute dx for each increment of x
+        for (var i = 0; i < n - 1; i++) {
+            u_x[i] = (u[i + 1] - u[i]) / dx;
+        }
+
+        var c2 = settings.c * settings.c; // Constant C^2
+        for (var i = 0; i < n - 2; i++) {
+            // compute second derivative wrt x
+            var u_xx_i = (u_x[i + 1] - u_x[i]) / dx;
+
+            // then use it to compute second derivative wrt t
+            u_tt[i] = u_xx_i * c2;
+        }
+
+        // update u_t according to u_tt
+        for (var i = 1; i < n - 1; i++) {
+            u_t[i] += u_tt[i - 1] * dt;
+        }
+
+        // update u
+        for (var i = 0; i < n; i++) {
+            u[i] += u_t[i] * dt;
+        }
+        u[n - 1] = u[n - 2];
+        u[0] = u[1];
     }
 
     function render() {
-        period = 50 // px
-        phase = 0
-        context.clearRect(0, 0, 500, 500);
-
-        var h = settings.wave_y + settings.wave_h;
-        context.fillStyle = settings.wave_color;
-        for (var x = settings.wave_x; x < settings.wave_x + settings.wave_w; x++) {
-            var y = settings.wave_y - (amplitude * Math.sin(x / period + phase));
-            context.fillRect(x, y, 1, h - y);
+        context.fillStyle = settings.color;
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        var base = 0.5 * canvas.height - 25;
+        var unitWidth = canvas.width / n; // dx per sample in pixels
+        for(var i = 0; i < n; i++) {
+            var x = i * unitWidth;
+            var h = 50 * u[i];
+            context.fillRect(
+                x, base - h,
+                unitWidth, h
+            );
         }
     };
 });
