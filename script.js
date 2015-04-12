@@ -1,15 +1,9 @@
-var config = {
-    c: 0.2, // wave equation constant
-    color: '#9af'
-}
-
 $(document).ready(function() {
     var canvas = document.getElementById('waves-canvas');
     var context = canvas.getContext('2d');
     var t_0 = new Date().getTime() / 1000;
     var t = 0;
     var dt = 0.01; // simulation step size in seconds
-
     var n = 100; // number of samples
 
     var dragState = {
@@ -34,13 +28,15 @@ $(document).ready(function() {
             dragState.isDragging = false;
         });
 
+    // Individual waves that will be rendered on canvas
     var waves = [
         wave(
             canvas,
             n,
+            0.2,
             [
                 {
-                    amplitude: 0.8,
+                    amplitude: 0.5,
                     period: 0.5,
                     dampener: 0.97,
                     lengthener: 1.001,
@@ -58,20 +54,56 @@ $(document).ready(function() {
         wave(
             canvas,
             n,
+            0.15,
             [
                 {
                     amplitude: 0.5,
                     period: 0.8,
-                    dampener: 0.9,
-                    lengthener: 1.001,
+                    dampener: 0.96,
+                    lengthener: 1.002,
                     crestOffset: 0
                 },
                 {
                     amplitude: 0.1,
                     period: 0.2,
-                    dampener: 0.99,
+                    dampener: 0.9,
                     lengthener: 1.0,
                     crestOffset: -0.2
+                },
+                {
+                    amplitude: 0.15,
+                    period: 0.3,
+                    dampener: 0.8,
+                    lengthener: 1.1,
+                    crestOffset: 0.25
+                }
+            ]
+        ),
+        wave(
+            canvas,
+            n,
+            0.25,
+            [
+                {
+                    amplitude: 0.3,
+                    period: 0.6,
+                    dampener: 0.92,
+                    lengthener: 1.0,
+                    crestOffset: 0
+                },
+                {
+                    amplitude: 0.04,
+                    period: 0.1,
+                    dampener: 0.90,
+                    lengthener: 1.0,
+                    crestOffset: -0.1
+                },
+                {
+                    amplitude: 0.05,
+                    period: 0.5,
+                    dampener: 0.8,
+                    lengthener: 1.1,
+                    crestOffset: 0.4
                 }
             ]
         ),
@@ -101,15 +133,14 @@ $(document).ready(function() {
         var base = 0.5 * canvas.height;
         var unitWidth = canvas.width / n; // dx per sample in pixels
 
-        // TODO for all waves, display
-        waves.forEach(function(waveInstance) {
-            var u = waveInstance.heightMap();
+        waves.forEach(function(w) {
+            var heightMap = w.heightMap();
 
             context.beginPath();
             context.moveTo(0, canvas.height);
             for(var i = 0; i < n; i++) {
                 var x = i * unitWidth;
-                var h = u[i];
+                var h = heightMap[i];
                 context.lineTo(x, base - h);
             }
             context.lineTo(canvas.width, canvas.height);
@@ -119,9 +150,10 @@ $(document).ready(function() {
     };
 });
 
-var wave = function(canvas, n, waveSettings) {
+var wave = function(canvas, n, waveEquationConstant, waveSettings) {
     var _canvas = canvas,
         _n = n, // number of samples
+        _c = waveEquationConstant,
         _waves = waveSettings; // list of wave settings
 
     var u = new Float32Array(n); // value of wave at each sample idx
@@ -137,7 +169,7 @@ var wave = function(canvas, n, waveSettings) {
             u_x[i] = (u[i + 1] - u[i]) / dx;
         }
 
-        var c2 = config.c * config.c; // Constant C^2
+        var c2 = _c * _c; // Constant C^2
         for (var i = 0; i < n - 2; i++) {
             // compute second derivative wrt x
             var u_xx_i = (u_x[i + 1] - u_x[i]) / dx;
