@@ -106,7 +106,7 @@ $(document).ready(function() {
                     crestOffset: 0.4
                 }
             ]
-        ),
+        )
     ];
 
     requestAnimationFrame(frame);
@@ -131,19 +131,48 @@ $(document).ready(function() {
         context.fillStyle = 'rgba(153, 170, 255, 0.5)';
         context.clearRect(0, 0, canvas.width, canvas.height);
         var base = 0.5 * canvas.height;
-        var unitWidth = canvas.width / n; // dx per sample in pixels
+        var unitWidth = canvas.width / (n - 1); // dx per sample in pixels
+
+        // radius of bowl and radius squared
+        var r = 0.5 * canvas.width;
+        var r2 = r * r;
 
         waves.forEach(function(w) {
             var heightMap = w.heightMap();
 
-            context.beginPath();
-            context.moveTo(0, canvas.height);
+            // Compute the points that make up the wave surface and the bowl angles
+            var startAngle = null, endAngle = null;
+            var points = []
             for(var i = 0; i < n; i++) {
                 var x = i * unitWidth;
+                var bowlDepth = Math.sqrt(Math.max(0, r2 - (r-x)*(r-x)));
                 var h = heightMap[i];
-                context.lineTo(x, base - h);
+
+                if (h < -bowlDepth || h > bowlDepth) {
+                    if (x < r) {
+                        endAngle = Math.atan2(h, x - r);
+                        points = []
+                    } else if (startAngle === null) {
+                        startAngle = Math.atan2(h, x - r);
+                    } else {
+                        break;
+                    }
+                } else {
+                    points.push([x, base - h])
+                }
             }
-            context.lineTo(canvas.width, canvas.height);
+
+            // Draw the path
+            context.beginPath();
+            context.moveTo(points[0][0], points[0][1]);
+            points.forEach(function(point) {
+                context.lineTo(point[0], point[1]);
+            })
+            context.arc(
+                r, r, r,
+                -startAngle || 0, 
+                -endAngle || Math.PI
+            );
             context.closePath();
             context.fill();
         });
@@ -227,7 +256,7 @@ var wave = function(canvas, n, waveEquationConstant, waveSettings) {
             u[i] += u_t[i] * dt;
         }
 
-        // boundary conditions: two-sided "wave pool"
+        // cheat to send the first and last sample
         u[n - 1] = u[n - 2];
         u[0] = u[1];
 
@@ -235,12 +264,13 @@ var wave = function(canvas, n, waveEquationConstant, waveSettings) {
         if (dragState.isDragging) {
             var crestIdx = dragState.x0 * n / canvas.width;
             for(var i = 0; i < n; i++) {
-                // positive dy means wave being pushed down, so
-                // subtract artificial wave multiplied by dy
                 var offset = 0; 
                 _waves.forEach(function(settings) {
                     offset += _compute(i, crestIdx, settings);
                 });
+
+                // positive dy means wave being pushed down, so
+                // subtract artificial wave multiplied by dy
                 u[i] -= 0.002 * dragState.dy * offset;
             }
         }
