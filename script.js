@@ -32,6 +32,7 @@ $(document).ready(function() {
     var waves = [
         wave(
             canvas,
+            'rgba(255, 0, 0, 0.5)',
             n,
             [
                 {
@@ -52,6 +53,7 @@ $(document).ready(function() {
         ),
         wave(
             canvas,
+            'rgba(0, 255, 0, 0.5)',
             n,
             [
                 {
@@ -79,6 +81,7 @@ $(document).ready(function() {
         ),
         wave(
             canvas,
+            'rgba(0, 200, 255, 0.5)',
             n,
             [
                 {
@@ -125,7 +128,7 @@ $(document).ready(function() {
     }
 
     function render() {
-        context.fillStyle = 'rgba(153, 170, 255, 0.5)';
+        context.globalCompositeOperation = 'xor';
         context.clearRect(0, 0, canvas.width, canvas.height);
         var base = 0.5 * canvas.height;
         var unitWidth = canvas.width / (n - 1); // dx per sample in pixels
@@ -160,6 +163,7 @@ $(document).ready(function() {
             }
 
             // Draw the path
+            context.fillStyle = w.color;
             context.beginPath();
             context.moveTo(points[0][0], points[0][1]);
             points.forEach(function(point) {
@@ -209,8 +213,9 @@ $(document).ready(function() {
  * @param {Array.<WaveSettings>} waveSettings - the final wave is a
  *      sum of partial waves, defined by these settings
  */
-var wave = function(canvas, n, waveSettings) {
+var wave = function(canvas, color, n, waveSettings) {
     var _canvas = canvas,
+        _color = color,
         _n = n,
         _waves = waveSettings;
 
@@ -310,5 +315,6 @@ var wave = function(canvas, n, waveSettings) {
     return {
         physics: _physics,
         heightMap: _heightMap,
+        color: _color,
     }
 };
