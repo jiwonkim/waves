@@ -33,7 +33,6 @@ $(document).ready(function() {
         wave(
             canvas,
             n,
-            0.2,
             [
                 {
                     amplitude: 0.5,
@@ -54,7 +53,6 @@ $(document).ready(function() {
         wave(
             canvas,
             n,
-            0.15,
             [
                 {
                     amplitude: 0.5,
@@ -82,7 +80,6 @@ $(document).ready(function() {
         wave(
             canvas,
             n,
-            0.25,
             [
                 {
                     amplitude: 0.3,
@@ -212,11 +209,13 @@ $(document).ready(function() {
  * @param {Array.<WaveSettings>} waveSettings - the final wave is a
  *      sum of partial waves, defined by these settings
  */
-var wave = function(canvas, n, waveEquationConstant, waveSettings) {
+var wave = function(canvas, n, waveSettings) {
     var _canvas = canvas,
         _n = n,
-        _c = waveEquationConstant,
         _waves = waveSettings;
+
+    var c = 0.35; // wave equation constant
+    var damping = 0.995;
 
     var u = new Float32Array(n); // value of wave at each sample idx
     var u_t = new Float32Array(n); // velocity at each sample idx
@@ -236,7 +235,7 @@ var wave = function(canvas, n, waveEquationConstant, waveSettings) {
             u_x[i] = (u[i + 1] - u[i]) / dx;
         }
 
-        var c2 = _c * _c; // Constant C^2
+        var c2 = c * c; // Constant C^2
         for (var i = 0; i < n - 2; i++) {
             // compute second derivative wrt x
             var u_xx_i = (u_x[i + 1] - u_x[i]) / dx;
@@ -248,7 +247,7 @@ var wave = function(canvas, n, waveEquationConstant, waveSettings) {
         // update u_t according to u_tt
         for (var i = 1; i < n - 1; i++) {
             u_t[i] += u_tt[i - 1] * dt;
-            u_t[i] *= 0.999
+            u_t[i] *= damping;
         }
 
         // update u
@@ -261,6 +260,7 @@ var wave = function(canvas, n, waveEquationConstant, waveSettings) {
         u[0] = u[1];
 
         // update u while being dragged
+        // TODO: mouse math can be simpler. Needs to keep total water level the same.
         if (dragState.isDragging) {
             var crestIdx = dragState.x0 * n / canvas.width;
             for(var i = 0; i < n; i++) {
