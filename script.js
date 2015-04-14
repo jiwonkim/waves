@@ -109,6 +109,10 @@ $(document).ready(function() {
         )
     ];
 
+    var flotsams = [
+        flotsam(canvas, 'duck.png', waves[0], 0.5)
+    ];
+
     requestAnimationFrame(frame);
 
     function frame() {
@@ -132,6 +136,11 @@ $(document).ready(function() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         waves.forEach(function(w) {
             w.render();
+        });
+
+        context.globalCompositeOperation = 'source-over';
+        flotsams.forEach(function(fs) {
+            fs.render();
         });
     };
 });
@@ -174,7 +183,8 @@ var wave = function(canvas, color, n, waveSettings) {
         _context = canvas.getContext('2d'),
         _color = color,
         _n = n,
-        _waves = waveSettings;
+        _waves = waveSettings,
+        _points = [];
 
     var c = 0.35; // wave equation constant
     var damping = 0.995; // controls how fast wave dampens over time
@@ -275,7 +285,7 @@ var wave = function(canvas, color, n, waveSettings) {
 
         // Compute the points that make up the wave surface and the bowl angles
         var startAngle = null, endAngle = null;
-        var points = []
+        _points = []
         for(var i = 0; i < n; i++) {
             var x = i * unitWidth;
             var bowlDepth = Math.sqrt(Math.max(0, r2 - (r-x)*(r-x)));
@@ -284,22 +294,22 @@ var wave = function(canvas, color, n, waveSettings) {
             if (h < -bowlDepth || h > bowlDepth) {
                 if (x < r) {
                     endAngle = Math.atan2(h, x - r);
-                    points = []
+                    _points = []
                 } else if (startAngle === null) {
                     startAngle = Math.atan2(h, x - r);
                 } else {
                     break;
                 }
             } else {
-                points.push([x, base - h])
+                _points.push([x, base - h])
             }
         }
 
         // Draw the path
         _context.fillStyle = _color;
         _context.beginPath();
-        _context.moveTo(points[0][0], points[0][1]);
-        points.forEach(function(point) {
+        _context.moveTo(_points[0][0], _points[0][1]);
+        _points.forEach(function(point) {
             _context.lineTo(point[0], point[1]);
         })
         _context.arc(
@@ -311,14 +321,42 @@ var wave = function(canvas, color, n, waveSettings) {
         _context.fill();
     };
  
-    var _heightMap = function() {
-        return u;
+    var _points = function() {
+        return _points;
     };
 
     return {
         physics: _physics,
         render: _render,
-        heightMap: _heightMap,
+        points: _points,
         color: _color,
+    }
+};
+
+var flotsam = function(canvas, path, waveInstance, position) {
+    var _canvas = canvas,
+        _context = canvas.getContext('2d'),
+        _wave = waveInstance,
+        _position = position,
+        _image = new Image();
+
+    _image.loaded = false;
+    _image.src = path;
+    _image.onload = function() {
+        _image.loaded = true;
+    };
+
+    var _render = function() {
+        var points = _wave.points();
+        var idx = Math.floor(_position * points.length);
+        var x, y;
+        x = points[idx][0] - _image.width * 0.5;
+        y = points[idx][1] - _image.height;
+
+        _context.drawImage(_image, x, y);
+    };
+
+    return {
+        render: _render
     }
 };
