@@ -130,52 +130,8 @@ $(document).ready(function() {
     function render() {
         context.globalCompositeOperation = 'xor';
         context.clearRect(0, 0, canvas.width, canvas.height);
-        var base = 0.5 * canvas.height;
-        var unitWidth = canvas.width / (n - 1); // dx per sample in pixels
-
-        // radius of bowl and radius squared
-        var r = 0.5 * canvas.width;
-        var r2 = r * r;
-
         waves.forEach(function(w) {
-            var heightMap = w.heightMap();
-
-            // Compute the points that make up the wave surface and the bowl angles
-            var startAngle = null, endAngle = null;
-            var points = []
-            for(var i = 0; i < n; i++) {
-                var x = i * unitWidth;
-                var bowlDepth = Math.sqrt(Math.max(0, r2 - (r-x)*(r-x)));
-                var h = heightMap[i];
-
-                if (h < -bowlDepth || h > bowlDepth) {
-                    if (x < r) {
-                        endAngle = Math.atan2(h, x - r);
-                        points = []
-                    } else if (startAngle === null) {
-                        startAngle = Math.atan2(h, x - r);
-                    } else {
-                        break;
-                    }
-                } else {
-                    points.push([x, base - h])
-                }
-            }
-
-            // Draw the path
-            context.fillStyle = w.color;
-            context.beginPath();
-            context.moveTo(points[0][0], points[0][1]);
-            points.forEach(function(point) {
-                context.lineTo(point[0], point[1]);
-            })
-            context.arc(
-                r, r, r,
-                -startAngle || 0, 
-                -endAngle || Math.PI
-            );
-            context.closePath();
-            context.fill();
+            w.render();
         });
     };
 });
@@ -215,12 +171,13 @@ $(document).ready(function() {
  */
 var wave = function(canvas, color, n, waveSettings) {
     var _canvas = canvas,
+        _context = canvas.getContext('2d'),
         _color = color,
         _n = n,
         _waves = waveSettings;
 
     var c = 0.35; // wave equation constant
-    var damping = 0.995;
+    var damping = 0.995; // controls how fast wave dampens over time
 
     var u = new Float32Array(n); // value of wave at each sample idx
     var u_t = new Float32Array(n); // velocity at each sample idx
@@ -307,6 +264,52 @@ var wave = function(canvas, color, n, waveSettings) {
         // value of u at i (wave's height)
         return amplitude * Math.sin((2.0 * Math.PI / period) * (i - phaseShift));
     };
+
+    var _render = function() {
+        var base = 0.5 * canvas.height;
+        var unitWidth = canvas.width / (n - 1); // dx per sample in pixels
+
+        // radius of bowl and radius squared
+        var r = 0.5 * canvas.width;
+        var r2 = r * r;
+
+        // Compute the points that make up the wave surface and the bowl angles
+        var startAngle = null, endAngle = null;
+        var points = []
+        for(var i = 0; i < n; i++) {
+            var x = i * unitWidth;
+            var bowlDepth = Math.sqrt(Math.max(0, r2 - (r-x)*(r-x)));
+            var h = u[i];
+
+            if (h < -bowlDepth || h > bowlDepth) {
+                if (x < r) {
+                    endAngle = Math.atan2(h, x - r);
+                    points = []
+                } else if (startAngle === null) {
+                    startAngle = Math.atan2(h, x - r);
+                } else {
+                    break;
+                }
+            } else {
+                points.push([x, base - h])
+            }
+        }
+
+        // Draw the path
+        _context.fillStyle = _color;
+        _context.beginPath();
+        _context.moveTo(points[0][0], points[0][1]);
+        points.forEach(function(point) {
+            _context.lineTo(point[0], point[1]);
+        })
+        _context.arc(
+            r, r, r,
+            -startAngle || 0, 
+            -endAngle || Math.PI
+        );
+        _context.closePath();
+        _context.fill();
+    };
  
     var _heightMap = function() {
         return u;
@@ -314,6 +317,7 @@ var wave = function(canvas, color, n, waveSettings) {
 
     return {
         physics: _physics,
+        render: _render,
         heightMap: _heightMap,
         color: _color,
     }
