@@ -275,14 +275,15 @@ var wave = function(canvas, color, n, waveSettings) {
         return amplitude * Math.sin((2.0 * Math.PI / period) * (i - phaseShift));
     };
 
+    // pre-computed dimensions for rendering
+    var base = 0.5 * canvas.height;
+    var unitWidth = canvas.width / (n - 1); // dx per sample in pixels
+
+    // radius of bowl and radius squared
+    var r = 0.5 * canvas.width;
+    var r2 = r * r;
+
     var _render = function() {
-        var base = 0.5 * canvas.height;
-        var unitWidth = canvas.width / (n - 1); // dx per sample in pixels
-
-        // radius of bowl and radius squared
-        var r = 0.5 * canvas.width;
-        var r2 = r * r;
-
         // Compute the points that make up the wave surface and the bowl angles
         var startAngle = null, endAngle = null;
         _points = []
@@ -320,40 +321,92 @@ var wave = function(canvas, color, n, waveSettings) {
         _context.closePath();
         _context.fill();
     };
- 
-    var _points = function() {
-        return _points;
+
+    /**
+     * @param {number} idx - Index of sample to grab the y pos for
+     * @return {number} Y coordinate for the wave at the sample idx
+     */
+    var _getY = function(idx) {
+        return base - u[idx];
     };
 
+    /**
+     * @param {number} idx - Index of sample to grab the x pos for
+     * @return {number} X coordinate for the wave at the sample idx
+     */
+    var _getX = function(idx) {
+        return idx * unitWidth;
+    };
+
+    /**
+     * @param {number} position - Float [0, 1] where 0 represents
+     *      first sample and 1 represents the last sample.
+     * @return {number} Index of the sample at given position
+     */
+    var _getIndex = function(position) {
+        return Math.floor(n * position)
+    };
+ 
     return {
         physics: _physics,
         render: _render,
-        points: _points,
         color: _color,
+        getY: _getY,
+        getX: _getX,
+        getIndex: _getIndex
     }
 };
 
+
+/**
+ * @param {HTMLElement} canvas
+ * @param {string} path
+ * @param {Object} waveInstance
+ * @param {number} position
+ */
 var flotsam = function(canvas, path, waveInstance, position) {
     var _canvas = canvas,
         _context = canvas.getContext('2d'),
         _wave = waveInstance,
         _position = position,
         _image = new Image();
-
+        
     _image.loaded = false;
     _image.src = path;
     _image.onload = function() {
         _image.loaded = true;
     };
 
+    var idx = _wave.getIndex(position);
     var _render = function() {
-        var points = _wave.points();
-        var idx = Math.floor(_position * points.length);
-        var x, y;
-        x = points[idx][0] - _image.width * 0.5;
-        y = points[idx][1] - _image.height;
+        if (!_image.loaded) {
+            return;
+        }
+        var waveX, waveY, x, y;
+        x = _wave.getX(idx);
+        y = _wave.getY(idx);
+        
+        _context.translate(x, y);
+        _context.rotate(_getAngleAt(idx));
+        _context.drawImage(_image, _image.width * -0.5, _image.height * -1.);
+        _resetTransformationMatrix();
+    };
 
-        _context.drawImage(_image, x, y);
+    /** 
+     * Get the angle of rotation 
+     */
+    var _getAngleAt = function(idx) {
+        var dy = _wave.getY(idx + 5) - _wave.getY(idx - 5);
+        var dx = _wave.getX(idx + 5) - _wave.getX(idx - 5);
+        return Math.atan2(dy, dx);
+    };
+
+    /**
+     * Reset the transformation matrix to identity
+     */
+    var _resetTransformationMatrix = function() {
+        _context.translate(0, 0);
+        _context.setTransform(1, 0, 0, 1, 0, 0);
     };
 
     return {
