@@ -116,8 +116,8 @@ $(document).ready(function() {
             waves[0],
             {
                 // position in pixels
-                px: 250,
-                py: 220,
+                px: 350,
+                py: 260,
 
                 // velocity in pixels / second
                 vx: 0,
@@ -125,7 +125,23 @@ $(document).ready(function() {
 
                 theta: 0
             }
-        )
+        ),
+        flotsam(
+            canvas,
+            'duck-violet.png',
+            waves[1],
+            {
+                // position in pixels
+                px: 100,
+                py: 260,
+
+                // velocity in pixels / second
+                vx: 0.1,
+                vy: 0,
+
+                theta: 0
+            }
+        ),
     ];
 
     requestAnimationFrame(frame);
