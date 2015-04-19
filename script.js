@@ -110,7 +110,22 @@ $(document).ready(function() {
     ];
 
     var flotsams = [
-        flotsam(canvas, 'duck.png', waves[0], 0.5)
+        flotsam(
+            canvas,
+            'duck.png',
+            waves[0],
+            {
+                // position in pixels
+                px: 150,
+                py: 150,
+
+                // velocity in pixels / second
+                vx: -20,
+                vy: -1,
+
+                theta: 0
+            }
+        )
     ];
 
     requestAnimationFrame(frame);
@@ -126,6 +141,9 @@ $(document).ready(function() {
         while(t < t_now) {
             waves.forEach(function(waveInstance) {
                 waveInstance.physics(dt, dragState);
+            });
+            flotsams.forEach(function(flotsamInstance) {
+                flotsamInstance.physics(dt);
             });
             t += dt;
         }
@@ -178,7 +196,7 @@ $(document).ready(function() {
  * @param {Array.<WaveSettings>} waveSettings - the final wave is a
  *      sum of partial waves, defined by these settings
  */
-var wave = function(canvas, color, n, waveSettings) {
+function wave(canvas, color, n, waveSettings) {
     var _canvas = canvas,
         _context = canvas.getContext('2d'),
         _color = color,
@@ -327,7 +345,7 @@ var wave = function(canvas, color, n, waveSettings) {
      * @return {number} Y coordinate for the wave at the sample idx
      */
     var _getY = function(idx) {
-        return base - u[idx];
+        return base - u[_clamp(idx, 0, n-1)];
     };
 
     /**
@@ -335,17 +353,20 @@ var wave = function(canvas, color, n, waveSettings) {
      * @return {number} X coordinate for the wave at the sample idx
      */
     var _getX = function(idx) {
-        return idx * unitWidth;
+        return _clamp(idx, 0, n-1) * unitWidth;
     };
 
     /**
-     * @param {number} position - Float [0, 1] where 0 represents
-     *      first sample and 1 represents the last sample.
+     * @param {number} position - x coordinate in pixels
      * @return {number} Index of the sample at given position
      */
-    var _getIndex = function(position) {
-        return Math.floor(n * position)
+    var _getIndex = function(x) {
+        return _clamp(Math.floor(x * n / canvas.width), 0, n-1)
     };
+
+    var _clamp = function(x, min, max) {
+        return Math.max(min, Math.min(max, x))
+    }
  
     return {
         physics: _physics,
@@ -355,20 +376,20 @@ var wave = function(canvas, color, n, waveSettings) {
         getX: _getX,
         getIndex: _getIndex
     }
-};
+}
 
 
 /**
  * @param {HTMLElement} canvas
  * @param {string} path
  * @param {Object} waveInstance
- * @param {number} position
+ * @param {FlotsamState} state
  */
-var flotsam = function(canvas, path, waveInstance, position) {
+function flotsam(canvas, path, waveInstance, state) {
     var _canvas = canvas,
         _context = canvas.getContext('2d'),
         _wave = waveInstance,
-        _position = position,
+        _state = state,
         _image = new Image();
         
     _image.loaded = false;
@@ -377,28 +398,101 @@ var flotsam = function(canvas, path, waveInstance, position) {
         _image.loaded = true;
     };
 
-    var idx = _wave.getIndex(position);
+    var ACCEL_GRAVITY = 20; // gravity acceleration in px / (s^2)
+    var ACCEL_FLOAT = 30; // floatiness in px / (s^2)
+    var ACCEL_DROPOFF = 0.2; // how fast float/gravity drops off
+    var ROTATIONAL_INERTIA = 20;
+    var WATER_FRICTION = 10;
+
+    var _physics = function(dt) {
+        if (!_image.loaded) {
+            return;
+        }
+        var idx = _wave.getIndex(_state.px);
+        var x = _wave.getX(idx);
+        var y = _wave.getY(idx);
+        var dy = _wave.getY(idx + 5) - _wave.getY(idx - 5);
+        var dx = _wave.getX(idx + 5) - _wave.getX(idx - 5);
+        var theta = Math.atan2(dy, dx);
+
+        // difference between flotsam and wave's y pos
+        var dy = y - _state.py;
+
+        // STEP 1: CALCULATE ACCELERATION
+        var ax, ay;
+        if (dy < 0) {
+            // Flotsam is submerged
+            // compute the current normal at sample
+            var nx, ny; 
+            nx = Math.cos(Math.PI * 0.5 - theta);
+            ny = -Math.sin(Math.PI * 0.5 - theta);
+
+            // The deeper the flotsam is submerged, the greater the acceleration
+            // to pop above the surface
+            var a = ACCEL_FLOAT * (1 - Math.exp(ACCEL_DROPOFF * dy));
+            ax = nx * a;
+            ay = ny * a;
+
+        } else {
+            // If the flotsam is above the water, then drop straight down - there is
+            // no acceleration along the x axis
+            ax = 0;
+            ay = ACCEL_GRAVITY * (1 - Math.exp(-1 * ACCEL_DROPOFF * dy));
+        }
+
+        // STEP 2: CALCULATE VELOCITY
+        // Start by integrating acceleration
+        _state.vx += ax * dt;
+        _state.vy += ay * dt;
+
+        // Apply friction if on water or below the water
+        if (dy < 0) { 
+            _state.vx *= (1 - WATER_FRICTION * dt);
+            _state.vy *= (1 - WATER_FRICTION * dt);
+        }
+        // Bounce off the sides of the tubby tub tubb
+        var bowlCenterX = _canvas.width / 2;
+        var bowlCenterY = _canvas.width / 2;
+        var bowlR = (_canvas.width / 2) - _image.width/2;
+        var bowlY = bowlR - _state.py;
+        var bowlHWidth = bowlY > 0 ? bowlR : Math.sqrt(bowlR*bowlR - bowlY*bowlY);
+        if (_state.px < bowlCenterX - bowlHWidth) {
+            _state.vx = Math.abs(_state.vx);
+        } else if (_state.px > bowlCenterX + bowlHWidth) {
+            _state.vx = -Math.abs(_state.vx);
+        }
+        // Bounce off the bottom of the tub
+        var bowlX = _state.px - bowlCenterX;
+        var bowlDepth = Math.sqrt(bowlR*bowlR - bowlX*bowlX);
+        if (_state.py > bowlCenterY + bowlDepth) {
+            _state.vy = -Math.abs(_state.vy);
+        }
+
+        // STEP 3: CALCULATE POSITION
+        _state.px += _state.vx;
+        _state.py += _state.vy;
+
+        // STEP 4: CALCULATE ROTATION
+        if (dy < 0) {
+          _state.theta += (theta - _state.theta) * (1 / ROTATIONAL_INERTIA);
+        }
+    };
+
     var _render = function() {
         if (!_image.loaded) {
             return;
         }
-        var waveX, waveY, x, y;
-        x = _wave.getX(idx);
-        y = _wave.getY(idx);
-        
-        _context.translate(x, y);
-        _context.rotate(_getAngleAt(idx));
-        _context.drawImage(_image, _image.width * -0.5, _image.height * -1.);
-        _resetTransformationMatrix();
-    };
 
-    /** 
-     * Get the angle of rotation 
-     */
-    var _getAngleAt = function(idx) {
-        var dy = _wave.getY(idx + 5) - _wave.getY(idx - 5);
-        var dx = _wave.getX(idx + 5) - _wave.getX(idx - 5);
-        return Math.atan2(dy, dx);
+        _context.translate(_state.px, _state.py);
+
+        // rotate the flotsam so that it sits on the wave's tangent
+        _context.rotate(_state.theta);
+
+        // draw the flotsam so that the bottom touches the wave
+        _context.drawImage(_image, _image.width * -0.5, _image.height * -1.);
+
+        // reset context
+        _resetTransformationMatrix();
     };
 
     /**
@@ -410,6 +504,7 @@ var flotsam = function(canvas, path, waveInstance, position) {
     };
 
     return {
+        physics: _physics,
         render: _render
     }
 };
