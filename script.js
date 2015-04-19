@@ -116,7 +116,7 @@ $(document).ready(function() {
             waves[0],
             {
                 // position in pixels
-                px: 150,
+                px: 250,
                 py: 220,
 
                 // velocity in pixels / second
@@ -250,9 +250,9 @@ function wave(canvas, color, n, waveSettings) {
         u[0] = u[1];
 
         // update u while being dragged
-        // TODO: mouse math can be simpler. Needs to keep total water level the same.
         if (dragState.isDragging) {
             var crestIdx = dragState.x0 * n / canvas.width;
+            var sum = 0;
             for(var i = 0; i < n; i++) {
                 var offset = 0; 
                 _waves.forEach(function(settings) {
@@ -262,6 +262,13 @@ function wave(canvas, color, n, waveSettings) {
                 // positive dy means wave being pushed down, so
                 // subtract artificial wave multiplied by dy
                 u[i] -= 0.002 * dragState.dy * offset;
+                sum += u[i];
+            }
+
+            // Make sure the water level stays the same
+            var avg = sum / n;
+            for (var i = 0; i < n; i++) {
+                u[i] -= avg;
             }
         }
     };
@@ -480,16 +487,20 @@ function flotsam(canvas, path, waveInstance, state) {
         _state.vy += ny * a * dt;
     };
 
+    /**
+     * Apply friction to dampen velocity if below the water
+     */
     var _drag = function(dy, dt) {
-        // Apply friction if below the water
         if (dy < 0) { 
             _state.vx *= (1 - WATER_FRICTION * dt);
             _state.vy *= (1 - WATER_FRICTION * dt);
         }
     };
 
+    /**
+     * Bounce off the sides of the tubby tub tubb
+     */
     var _bounce = function() {
-        // Bounce off the sides of the tubby tub tubb
         var bowlCenterX = _canvas.width / 2;
         var bowlCenterY = _canvas.width / 2;
         var bowlR = (_canvas.width / 2) - _image.width/2;
@@ -509,8 +520,10 @@ function flotsam(canvas, path, waveInstance, state) {
         }
     };
 
+    /**
+     * Rotate the flotsam if below the water
+     */
     var _rotate = function(theta, dy) {
-        // Rotate the flotsam if below the water
         if (dy < 0) {
           _state.theta += (theta - _state.theta) * (1 / ROTATIONAL_INERTIA);
         }
