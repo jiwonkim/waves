@@ -1,4 +1,5 @@
 <html>
+    <meta charset="UTF-8">
     <head>
         <title>Waves</title>
         <script src="jquery-1.11.2.min.js"></script>
@@ -6,8 +7,132 @@
         <link rel="stylesheet" type="text/css" href="style.css">
     </head>
     <body>
-        <h1>Here are some rubber duckies</h1>
-        <h2>Drag your mouse up and down the waves to make them surf</h2>
-        <canvas id="waves-canvas" width="500" height="500"></canvas>
+        <div id="demo">
+            <h1>Here are some rubber duckies</h1>
+            <p class="help">Drag your mouse up and down the waves to make them surf <a href="#implementation">?</a></p>
+                <canvas id="waves-canvas" width="500" height="500"></canvas>
+        </div>
+        
+        <div id="implementation">
+            <h2>Implementation details</h2>
+            <h3>Step 1: Grab the PDE for a one dimensional wave</h3>
+            <p>
+                From the <a href="http://en.wikipedia.org/wiki/Partial_differential_equation#Wave_equation_in_one_spatial_dimension">Wikipedia entry for the wave equation</a>:
+            </p>
+            <p class="align-center">
+                <span class="pre">u_tt = c^2 * u_xx</span>
+            </p>
+            <p>
+                <b>The goal:</b><br>
+                Get <span class="pre">u(t, x)</span>, which tells you the height of the wave at time <span class="pre">t</span> at one-dimensional position <span class="pre">x</span>.
+            </p>
+            <p>
+                <b>How to get <span class="pre">u(t, x)</span>:</b><br>
+                Get <span class="pre">u_tt</span>, the acceleration of the wave, at position x. Then integrate it into the velocity of the wave over time. Then update the value of <span class="pre">u(t, x)</span> by adding the current velocity to the previous <span class="pre">u(t, x)</span>.
+            </p>
+            <p>
+                <b>How to get <span class="pre">u_tt</span>:</b><br>
+                Easy peasy. According to the wave equation, all we need to do is set a constant <span class="pre">c</span> and multiply its square to <span class="pre">u_xx</span>.
+            </p>
+            <p>
+                <b>How to get <span class="pre">u_xx</span>:</b><br>
+                Intuitively, the second differential of <span class="pre">u</span> wrt <span class="pre">x</span> is the horizontal acceleration of the wave. The momentum of the crest, loosely speaking. For this, we need to start with a value of <span class="pre">u_x</span>, then differentiate it.
+            </p>
+            <p>
+                <b>But then where do we get <span class="pre">u_x</span>?</b>
+            </p>
+
+            <h3>Step 2: Init variables needed to compute u(t, x)</h3>
+            <p>
+                To get the wave going, we'll need to start with a snapshot of <span class="pre">u(0, x)</span>, and the initial velocities, <span class="pre">u_t(0, x)</span>. Let's work with 10 samples on the wave.
+            </p>
+            <p class="align-center">
+                <span class="pre">
+u = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+u_t = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                </span>
+            </p>
+            <p>
+                This snapshot shows that currently the all the water is on the right, and there is no starting velocity.
+            </p>
+            <p>
+                Before we go on and try to compute <span class="pre">u(t, x)</span> for all samples, we need to define <span class="pre">dt</span> and <span class="pre">dx</span>, the unit time and unit x position per sample, and the wave equation constant <span class="pre">c</span>.
+            </p>
+            <p class="align-center">
+                <span class="pre">
+dt = 0.1
+dx = 0.1
+c = 2
+                </span>
+            </p>
+            <p>
+                They're just arbitrary values without units for now. Just avoiding 1 to make things interesting.
+            </p>
+
+            <h3>Step 3: Apply the PDE to the variables</h3>
+            <p>
+                Now that we have the initial conditions set up, we can apply the PDE. Let's first compute <span class="pre">u_x</span>, as left hanging in Step 1.
+            </p>
+            <p class="align-center">
+                <span class="pre">
+    u_x[i] = (u[i+1] - u[i])/dx for i in [0, n-1)
+                </span>
+            </p>
+            <p>
+                So for the initial conditions we set up in step 2, we'll get the following <span class="pre">u_x</span>:
+            </p>
+            <p class="align-center">
+                <span class="pre">
+u_x = [0, 0, 0, 0, 10, 0, 0, 0, 0]
+                </span>
+            </p>
+            <p>
+                Now we can compute <span class="pre">u_xx</span>:
+            </p>
+            <p class="align-center">
+                <span class="pre">
+u_xx = [0, 0, 0, 100, -100, 0, 0, 0]
+                </span>
+            </p>
+            <p>
+                In English, this tells us that the center of the wave wants to splash - the place just before the water suddenly rises wants to rise, and the place just after the rise wants to fall.
+            </p>
+            <p>
+                Now finally we apply the wave equation and compute <span class="pre">u_tt</span>!
+            </p>
+            <p class="align-center">
+                <span class="pre">
+u_tt = [0, 0, 0, 400, -400, 0, 0, 0]
+                </span>
+            </p>
+            <p>
+                Now that we know <span class="pre">u_tt</span>, we need to integrate it to get the updated <span clas="pre">u_t</span>, by multiplying each value by <span class="pre">dt</span>:
+            </p>
+            <p class="align-center">
+                <span class="pre">
+u_t = [0, 0, 0, 40, -40, 0, 0, 0]
+                </span>
+            </p>
+            <p>
+                Then we integrate again to get the change in water level for each sample, and update <span class="pre">u</span>! But before we do that real quick, notice that we only have 8 values for velocity after all the differentiating. We'll just copy over the values on the edge to give us 10 values for all 10 samples.
+            </p>
+            <p class="align-center">
+                <span class="pre">
+u += [0, 0, 0, 0, 4, -4, 0, 0, 0, 0]
+                </span>
+            </p>
+            <p>
+                Now we have a new snapshot of the wave water levels at <span class="pre">t = 0.1</span>!
+            </p>
+            <p class="align-center">
+                <span class="pre">
+u = [0, 0, 0, 0, 4, -3, 1, 1, 1, 1]
+                </span>
+            </p>
+            <p>
+                Now it's a matter of tweaking the initial conditions, the wave constant, and the number of samples to get your wave looking the way you want! 👌
+            </p>
+        </div>
+        <p class="footnote">Thanks <a href="http://dcpos.ch">Daniel</a> for being my math consultant!</p>
     </body>
 </html>

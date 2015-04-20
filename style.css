@@ -1,21 +1,79 @@
 body {
     font-family: "Helvetica Neue", Helvetica, sans-serif;
     text-align: center;
-    overflow: hidden;
+}
+
+h1, h2, h3 {
+    font-weight: 200;
 }
 
 h1 {
     font-size: 64px;
-    font-weight: 200;
     margin-bottom: 0;
 }
 
 h2 {
+    font-size: 48px;
+}
+
+h3 {
+    font-size: 24px;
+    color: #080;
+}
+
+.help {
     font-size: 36px;
     font-weight: 100;
     margin-top: 0;
 }
 
+a {
+    color: #333;
+    text-decoration: none;
+    box-shadow: inset 0 -5px rgba(255, 255, 0, 0.3);
+}
+
+a:hover {
+    box-shadow: inset 0 -5px rgba(255, 255, 0, 0.8);
+}
+
 canvas {
     cursor: pointer;
+}
+
+#demo {
+    min-height: 700px;
+    height: 100%;
+}
+
+#implementation {
+    width: 600px;
+    margin: 0 auto;
+}
+
+#implementation p {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+#implementation p b {
+    display: block;
+}
+
+#implementation p.align-center {
+    text-align: center;
+}
+
+.pre {
+    font-size: 16px;
+    display: inline;
+    font-family: monospace;
+    color: #080;
+    white-space: pre;
+}
+
+.footnote {
+    margin-top: 100px;
+    margin-right: 10px;
+    text-align: center;
 }
