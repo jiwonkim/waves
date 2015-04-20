@@ -17,6 +17,7 @@ $(document).ready(function() {
             dragState.isDragging = true;
             dragState.x0 = evt.offsetX;
             dragState.y0 = evt.offsetY;
+            $(canvas).css('cursor', 'ns-resize');
         })
         .mousemove(function(evt) {
             if (dragState.isDragging) {
@@ -26,6 +27,7 @@ $(document).ready(function() {
         })
         .on('mouseup mouseout mouseleave', function(evt) {
             dragState.isDragging = false;
+            $(canvas).css('cursor', 'pointer');
         });
 
     // Individual waves that will be rendered on canvas
