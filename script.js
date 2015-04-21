@@ -6,29 +6,10 @@ $(document).ready(function() {
     var dt = 0.01; // simulation step size in seconds
     var n = 100; // number of samples
 
-    var dragState = {
-        isDragging: false,
-        x0: 0,
-        y0: 0,
-        dy: 0
-    }
-    $(canvas)
-        .mousedown(function(evt) {
-            dragState.isDragging = true;
-            dragState.x0 = evt.offsetX;
-            dragState.y0 = evt.offsetY;
-            $(canvas).css('cursor', 'ns-resize');
-        })
-        .mousemove(function(evt) {
-            if (dragState.isDragging) {
-                dragState.dy = evt.offsetY - dragState.y0;
-                dragState.y0 = evt.offsetY;
-            }
-        })
-        .on('mouseup mouseout mouseleave', function(evt) {
-            dragState.isDragging = false;
-            $(canvas).css('cursor', 'pointer');
-        });
+    var _surf = surf(canvas.height * 0.5);
+    $(canvas).click(function(evt) {
+        _surf.init(evt);
+    });
 
     // Individual waves that will be rendered on canvas
     var waves = [
@@ -158,11 +139,12 @@ $(document).ready(function() {
         var t_now = new Date().getTime() / 1000 - t_0; // time in seconds
         while(t < t_now) {
             waves.forEach(function(waveInstance) {
-                waveInstance.physics(dt, dragState);
+                waveInstance.physics(dt, _surf.state());
             });
             flotsams.forEach(function(flotsamInstance) {
                 flotsamInstance.physics(dt);
             });
+            _surf.tick();
             t += dt;
         }
     }
@@ -198,11 +180,10 @@ $(document).ready(function() {
 
 /**
  * Stores the state of mouse drag.
- * @typedef {Object} DragState
- * @property {boolean} isDragging
- * @property {number} x0 - the initial mouse x, defines the crest
- * @property {number} y0 - the last mouse y
- * @property {number} dy - the y velocity
+ * @typedef {Object} SurfState
+ * @property {boolean} isSurfing
+ * @property {number} x - the x coordinate of the surf origin
+ * @property {number} vy - the y velocity of the surf
  */
 
 /**
@@ -233,9 +214,9 @@ function wave(canvas, color, n, waveSettings) {
     /**
      * Update the height map according to the wave equation.
      * @param {number} dt
-     * @param {DragState} dragState
+     * @param {surfState} surfState
      */
-    var _physics = function(dt, dragState) {
+    var _physics = function(dt, surfState) {
         var dx = 1. / n; // change in x per value in u
 
         // compute dx for each increment of x
@@ -267,9 +248,9 @@ function wave(canvas, color, n, waveSettings) {
         u[n - 1] = u[n - 2];
         u[0] = u[1];
 
-        // update u while being dragged
-        if (dragState.isDragging) {
-            var crestIdx = dragState.x0 * n / canvas.width;
+        // update u according to click state
+        if (surfState.isSurfing) {
+            var crestIdx = surfState.x * n / canvas.width;
             var sum = 0;
             for(var i = 0; i < n; i++) {
                 var offset = 0; 
@@ -279,7 +260,7 @@ function wave(canvas, color, n, waveSettings) {
 
                 // positive dy means wave being pushed down, so
                 // subtract artificial wave multiplied by dy
-                u[i] -= 0.002 * dragState.dy * offset;
+                u[i] -= 0.002 * surfState.vy * offset;
                 sum += u[i];
             }
 
@@ -558,5 +539,64 @@ function flotsam(canvas, path, waveInstance, state) {
     return {
         physics: _physics,
         render: _render
+    }
+};
+
+
+var surf = function(waterY) {
+    var QUAD_COEFFICIENT = 0.05;
+    var MAX_SURF_SIZE = 50; // units in pixels
+
+    var _waterY = waterY,
+        _vertex = [0, 0],
+        _maxTick = 0,
+        _currTick = 0,
+        _state = {
+            x: 0,
+            vy: 0,
+            isSurfing: false
+        };
+
+    var _init = function(evt) {
+        _state.x = evt.offsetX;
+        _state.isSurfing = true;
+
+        // get click y pos relative to water level and clamp to MAX_SURF_SIZE
+        var dy = Math.min(
+            Math.max(-MAX_SURF_SIZE, waterY - evt.offsetY),
+            MAX_SURF_SIZE
+        );
+
+        // The following quadratic equation:
+        //     f(x) = -a * (t - dy/2)^2 + a * (dy/2)^2
+        // eases the surf's velocity along time
+        _vertex = [
+            Math.abs(dy/2),
+            QUAD_COEFFICIENT * dy * dy / 4
+        ];
+        currTick = 0;
+        maxTick = _vertex[0] * 2;
+    };
+
+    var _tick = function() {
+        if (!_state.isSurfing) {
+            return;
+        }
+        if (currTick > maxTick) {
+            _state.isSurfing = false;
+            return;
+        }
+        currTick++;
+        _state.vy = -1 * QUAD_COEFFICIENT * Math.pow(currTick - _vertex[0], 2) + _vertex[1];
+    };
+
+    var _getState = function() {
+        return _state;
+    };
+    
+    return {
+        init: _init,
+        tick: _tick,
+        state: _getState
     }
 };
