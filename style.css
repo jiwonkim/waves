@@ -47,6 +47,11 @@ a:hover {
 
 canvas {
     cursor: pointer;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    outline: none;
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
 }
 
 #demo {
