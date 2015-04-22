@@ -8,27 +8,30 @@ h1, h2, h3 {
 }
 
 h1 {
-    font-size: 64px;
+    font-size: 4em;
     margin-bottom: 0;
+    line-height: 0.8em;
 }
 
 h2 {
-    font-size: 48px;
+    font-size: 3em;
 }
 
 h3 {
-    font-size: 36px;
+    font-size: 2em;
     color: #080;
+    line-height: 0.9em;
 }
 
 .help {
-    font-size: 24px;
+    font-size: 1.5em;
     font-weight: 100;
     margin-top: 0;
+    line-height: 1.4em;
 }
 
 .help strong {
-    font-size: 36px;
+    font-size: 1.5em;
     font-weight: 100;
 }
 
@@ -47,6 +50,7 @@ canvas {
 }
 
 #demo {
+    margin-top: 20px;
     min-height: 700px;
     height: 100%;
 }
@@ -70,7 +74,7 @@ canvas {
 }
 
 .pre {
-    font-size: 16px;
+    font-size: 1.2em;
     display: inline;
     font-family: monospace;
     color: #080;
@@ -88,8 +92,19 @@ canvas {
     top: 5px;
     right: 5px;
     padding-left: 30px;
-    font-size: 24px;
-    line-height: 24px;
+    font-size: 1.5em;
+    line-height: 1em;
     background-image: url('github.png');
     background-repeat: no-repeat;
+}
+
+@media (max-width: 600px) {
+    #demo,
+    #implementation {
+        width: 100%;
+    }
+
+    #demo {
+        min-width: 500px;
+    }
 }
