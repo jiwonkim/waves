@@ -86,7 +86,7 @@ canvas {
     white-space: pre;
 }
 
-.footnote {
+#implementation .footnote {
     margin-top: 100px;
     margin-right: 10px;
     text-align: center;
@@ -97,19 +97,21 @@ canvas {
     top: 5px;
     right: 5px;
     padding-left: 30px;
-    font-size: 1.5em;
-    line-height: 1em;
+    font-size: 24px;
+    line-height: 24px;
     background-image: url('github.png');
     background-repeat: no-repeat;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 1000px) {
     #demo,
     #implementation {
         width: 100%;
+        max-width: 600px;
     }
 
     #demo {
-        min-width: 500px;
+        width: 500px;
+        margin: 0 auto;
     }
 }
