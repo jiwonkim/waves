@@ -190,8 +190,7 @@ $(document).ready(function() {
  * Defines a single wave with the given settings.
  * @param {HTMLElement} canvas
  * @param {number} n - The number of samples
- * @param {number} waveEquationConstant -  bigger the constant, the
- *      faster the wave propagates
+ * @param {string} color 
  * @param {Array.<WaveSettings>} waveSettings - the final wave is a
  *      sum of partial waves, defined by these settings
  */
