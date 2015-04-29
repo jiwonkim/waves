@@ -1,0 +1,41 @@
+<html>
+<head>
+<script src="jquery-1.11.2.min.js"></script>
+<script src="wave.js"></script>
+<script>
+$(document).ready(function() {
+    var canvas = document.getElementById('exp-canvas');
+    var context = canvas.getContext('2d');
+    var w = wave();
+    w.splash(0.5, 1, true);
+    requestAnimationFrame(frame);
+
+    function frame() {
+        for (var i = 0; i < 5; i++) {
+            w.tick();
+        }
+        render();
+        requestAnimationFrame(frame);
+    }
+
+    $(document).click(function(evt) {
+        var x = evt.offsetX / canvas.width;
+        var isPositive = evt.offsetY < canvas.height / 2;
+        w.splash(x, 2, isPositive);
+    });
+
+    function render() {
+        context.clearRect(0, 0, 500, 500);
+        for (var i = 0; i < 100; i++) {
+            var level = w.height(i);
+            var y = level * -250. + 250;
+            context.fillRect(i * 5, y, 5, 500 - y);
+        }
+    }
+});
+</script>
+</head>
+<body>
+<canvas id="exp-canvas" width="500px" height="500px"></canvas>
+</body>
+</html>
