@@ -1,0 +1,61 @@
+<html>
+<head>
+<script src="../jquery-1.11.2.min.js"></script>
+<script src="../wave.js"></script>
+<script>
+$(document).ready(function() {
+    var SPLASH_STRENGTH = 2;
+    var NUM_SAMPLES = 100;
+    var canvas = document.getElementById('exp-canvas');
+    var context = canvas.getContext('2d');
+    var width = canvas.width;
+    var height = canvas.height;
+
+    var w = wave();
+    w.splash(0.5, 1, true);
+
+    requestAnimationFrame(frame);
+
+    function frame() {
+        for (var i = 0; i < 5; i++) {
+            w.tick();
+        }
+        render();
+        requestAnimationFrame(frame);
+    }
+
+    $(document).click(function(evt) {
+        var x = evt.offsetX / width;
+        var isPositive = evt.offsetY < height / 2;
+        w.splash(x, SPLASH_STRENGTH, isPositive);
+    });
+
+    function render() {
+        context.clearRect(0, 0, width, height);
+        context.beginPath();
+        var unitX = width / NUM_SAMPLES;
+        for (var i = 0; i < NUM_SAMPLES; i++) {
+            var level = w.height(i); // water level in range [-1, 1]
+            var y = level * -height / 2 + height / 2; // translate to canvas y coordinate
+
+            if (i === 0) {
+                context.moveTo(unitX * i, y);
+            } else {
+                context.lineTo(unitX * i, y);
+            }
+        }
+        context.stroke();
+    }
+});
+</script>
+<style type="text/css">
+    #exp-canvas {
+        margin: 0 auto;
+        display: block;
+    }
+</style>
+</head>
+<body>
+<canvas id="exp-canvas" width="500px" height="500px"></canvas>
+</body>
+</html>
