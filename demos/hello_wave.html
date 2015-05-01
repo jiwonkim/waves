@@ -2,41 +2,83 @@
 <head>
 <script src="../jquery-1.11.2.min.js"></script>
 <script src="../wave.js"></script>
+
+<!-- Highlight JS -->
+<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/styles/monokai.min.css">
+<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/highlight.min.js"></script>
+
 <script>
+hljs.initHighlightingOnLoad();
 $(document).ready(function() {
+    /** CONSTANTS **/
     var SPLASH_STRENGTH = 2;
     var NUM_SAMPLES = 100;
+    var STROKE_WIDTH = 2;
+
+    /** VARIABLES **/
     var canvas = document.getElementById('exp-canvas');
     var context = canvas.getContext('2d');
     var width = canvas.width;
     var height = canvas.height;
 
-    var w = wave();
-    w.splash(0.5, 1, true);
+    // Dimensions and coordinates for a simple frame we're going to
+    // render to box in the wave. It's as wide as the canvas but more stout.
+    var frameWidth = width - STROKE_WIDTH;
+    var frameHeight = height / 2;
+    var frameX = STROKE_WIDTH / 2;
+    var frameY = height / 2 - frameHeight / 2;
+    var frameMaxY = height / 2 + frameHeight / 2;
 
+    // Create wave and start rendering
+    var wavelette = initWave();
+    $(canvas).click(createSplash);
     requestAnimationFrame(frame);
 
+    /** FUNCTIONS THAT INTERACT WITH OR ACCESS THE WAVE **/
+
+    // Create a new wave and splash the wave in the center
+    function initWave() {
+        var w = wave({numSamples: NUM_SAMPLES});
+        w.splash(0.5, SPLASH_STRENGTH, true);
+        return w;
+    }
+
+    // Create a splash at the x coordinate of the event.
+    // If the click happens above water level, the wave splashes upwards.
+    // Otherwise, the wave splashes downwards (dips).
+    function createSplash(evt) {
+        var x = evt.offsetX / width;
+        var isPositive = evt.offsetY < height / 2;
+        wavelette.splash(x, SPLASH_STRENGTH, isPositive);
+    }
+
+    // One animation frame
     function frame() {
+        // Advance the propagation five times to speed up the animation
+        // This is to make the wave less viscous and more water-like.
         for (var i = 0; i < 5; i++) {
-            w.tick();
+            wavelette.tick();
         }
+
         render();
         requestAnimationFrame(frame);
     }
 
-    $(document).click(function(evt) {
-        var x = evt.offsetX / width;
-        var isPositive = evt.offsetY < height / 2;
-        w.splash(x, SPLASH_STRENGTH, isPositive);
-    });
-
-    function render() {
-        context.clearRect(0, 0, width, height);
+    // Render the wave by (1) iterating over each sample, (2) grabbing the height
+    // of the wave at the sample, and (3) translating the wave height into
+    // canavas coordinates. This list of coordinates are rendered as a path
+    // on the canvas.
+    function renderWave() {
         context.beginPath();
-        var unitX = width / NUM_SAMPLES;
+        var unitX = width / (NUM_SAMPLES - 1);
         for (var i = 0; i < NUM_SAMPLES; i++) {
-            var level = w.height(i); // water level in range [-1, 1]
-            var y = level * -height / 2 + height / 2; // translate to canvas y coordinate
+            var level = wavelette.height(i); // water level in range [-1, 1]
+
+            // translate the wave height to a canvas y coordinate
+            var y = level * -height / 2 + height / 2;
+
+            // clamp y coord to frame
+            y = Math.max(frameY, Math.min(frameMaxY, y))
 
             if (i === 0) {
                 context.moveTo(unitX * i, y);
@@ -46,16 +88,154 @@ $(document).ready(function() {
         }
         context.stroke();
     }
+
+
+    /** RENDERING FUNCTIONS NOT DIRECTLY RELATED TO WAVE **/
+
+    function render() {
+        context.clearRect(0, 0, width, height);
+        context.lineWidth = STROKE_WIDTH;
+        renderFrame();
+        renderWave();
+    }
+
+    function renderFrame() {
+        context.beginPath();
+        context.rect(frameX, frameY, frameWidth, frameHeight);
+        context.stroke();
+    }
 });
+
 </script>
 <style type="text/css">
-    #exp-canvas {
-        margin: 0 auto;
-        display: block;
+    body {
+        text-align: center;
+        font-family: Helvetica Neue, sans-serif;
+    }
+
+    h1 {
+        font-size: 64px;
+        font-weight: 200;
+        margin: 0;
+    }
+
+    h2 {
+        font-size: 36px;
+        font-weight: 200;
+        color: #2ca;
+        margin: 0;
+    }
+
+    code {
+        width: 800px;
+        margin: 20px auto;
+        text-align: left;
+        font-family: Andale Mono, sans-serif;
     }
 </style>
 </head>
 <body>
+<h1>Hello Wave</h1>
+<h2>Click anywhere on the canvas to splash</h2>
 <canvas id="exp-canvas" width="500px" height="500px"></canvas>
+
+<h2>Sauce</h2>
+<pre><code class="hljs javascript solarized-dark">$(document).ready(function() {
+    /** CONSTANTS **/
+    var SPLASH_STRENGTH = 2;
+    var NUM_SAMPLES = 100;
+    var STROKE_WIDTH = 2;
+
+    /** VARIABLES **/
+    var canvas = document.getElementById('exp-canvas');
+    var context = canvas.getContext('2d');
+    var width = canvas.width;
+    var height = canvas.height;
+
+    // Dimensions and coordinates for a simple frame we're going to
+    // render to box in the wave. It's as wide as the canvas but more stout.
+    var frameWidth = width - STROKE_WIDTH;
+    var frameHeight = height / 2;
+    var frameX = STROKE_WIDTH / 2;
+    var frameY = height / 2 - frameHeight / 2;
+    var frameMaxY = height / 2 + frameHeight / 2;
+
+    // Create wave and start rendering
+    var wavelette = initWave();
+    $(canvas).click(createSplash);
+    requestAnimationFrame(frame);
+
+    /** FUNCTIONS THAT INTERACT WITH OR ACCESS THE WAVE **/
+
+    // Create a new wave and splash the wave in the center
+    function initWave() {
+        var w = wave({numSamples: NUM_SAMPLES});
+        w.splash(0.5, SPLASH_STRENGTH, true);
+        return w;
+    }
+
+    // Create a splash at the x coordinate of the event.
+    // If the click happens above water level, the wave splashes upwards.
+    // Otherwise, the wave splashes downwards (dips).
+    function createSplash(evt) {
+        var x = evt.offsetX / width;
+        var isPositive = evt.offsetY < height / 2;
+        wavelette.splash(x, SPLASH_STRENGTH, isPositive);
+    }
+
+    // One animation frame
+    function frame() {
+        // Advance the propagation five times to speed up the animation
+        // This is to make the wave less viscous and more water-like.
+        for (var i = 0; i < 5; i++) {
+            wavelette.tick();
+        }
+
+        render();
+        requestAnimationFrame(frame);
+    }
+
+    // Render the wave by (1) iterating over each sample, (2) grabbing the height
+    // of the wave at the sample, and (3) translating the wave height into
+    // canavas coordinates. This list of coordinates are rendered as a path
+    // on the canvas.
+    function renderWave() {
+        context.beginPath();
+        var unitX = width / (NUM_SAMPLES - 1);
+        for (var i = 0; i < NUM_SAMPLES; i++) {
+            var level = wavelette.height(i); // water level in range [-1, 1]
+
+            // translate the wave height to a canvas y coordinate
+            var y = level * -height / 2 + height / 2;
+
+            // clamp y coord to frame
+            y = Math.max(frameY, Math.min(frameMaxY, y))
+
+            if (i === 0) {
+                context.moveTo(unitX * i, y);
+            } else {
+                context.lineTo(unitX * i, y);
+            }
+        }
+        context.stroke();
+    }
+
+
+    /** RENDERING FUNCTIONS NOT DIRECTLY RELATED TO WAVE **/
+
+    function render() {
+        context.clearRect(0, 0, width, height);
+        context.lineWidth = STROKE_WIDTH;
+        renderFrame();
+        renderWave();
+    }
+
+    function renderFrame() {
+        context.beginPath();
+        context.rect(frameX, frameY, frameWidth, frameHeight);
+        context.stroke();
+    }
+});
+</code></pre>
 </body>
 </html>
