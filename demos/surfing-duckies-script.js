@@ -148,9 +148,22 @@ $(document).ready(function() {
         var points = []
         for(var i = 0; i < n; i++) {
             var x = i * unitWidth;
-
+            var bowlDepth = Math.sqrt(Math.max(0, r2 - (r-x)*(r-x)));
             var coords =  waveToCanvasCoordinates(i / n, w.height(i));
-            points.push([coords.x, coords.y])
+
+            // the wave has dipped below the bottom of the bowl or 
+            if (coords.y > height / 2 + bowlDepth || coords.y < height / 2 - bowlDepth) {
+                if (x < r) {
+                    endAngle = Math.atan2(height / 2 - coords.y, x - r);
+                    _points = []
+                } else if (startAngle === null) {
+                    startAngle = Math.atan2(height / 2 - coords.y, x - r);
+                } else {
+                    break;
+                }
+            } else {
+                points.push([coords.x, coords.y])
+            }
         }
 
         // Draw the path
