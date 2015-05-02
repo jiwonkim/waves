@@ -1,6 +1,5 @@
 <html>
-<head>
-<script src="../jquery-1.11.2.min.js"></script>
+<head> <script src="../jquery-1.11.2.min.js"></script>
 <script src="../wave.js"></script>
 
 <!-- Highlight JS -->
@@ -11,7 +10,6 @@
 hljs.initHighlightingOnLoad();
 $(document).ready(function() {
     /** CONSTANTS **/
-    var SPLASH_STRENGTH = 2;
     var NUM_SAMPLES = 100;
     var STROKE_WIDTH = 2;
 
@@ -34,22 +32,33 @@ $(document).ready(function() {
     $(canvas).click(createSplash);
     requestAnimationFrame(frame);
 
+
     /** FUNCTIONS THAT INTERACT WITH OR ACCESS THE WAVE **/
 
-    // Create a new wave and splash the wave in the center
+    // Create a new wave
     function initWave() {
-        var w = wave({numSamples: NUM_SAMPLES});
-        w.splash(0.5, SPLASH_STRENGTH, true);
-        return w;
+        return wave({numSamples: NUM_SAMPLES});
     }
 
     // Create a splash at the x coordinate of the event.
     // If the click happens above water level, the wave splashes upwards.
     // Otherwise, the wave splashes downwards (dips).
     function createSplash(evt) {
-        var x = evt.offsetX / width;
-        var isPositive = evt.offsetY < height / 2;
-        wavelette.splash(x, SPLASH_STRENGTH, isPositive);
+        var coords = canvasToWaveCoordinates(evt.offsetX, evt.offsetY);
+        
+        // Create general turbulence
+        wavelette.churn(coords.x, coords.y, 0.5);
+
+        // Create a targeted splash towards the clicked location
+        wavelette.splash(coords.x, coords.y, 0.25);
+
+    }
+
+    function canvasToWaveCoordinates(x, y) {
+        return {
+            x: x / width,
+            y: -2 * (y / height - 0.5)
+        };
     }
 
     // One animation frame
@@ -136,13 +145,12 @@ $(document).ready(function() {
 </head>
 <body>
 <h1>Hello Wave</h1>
-<h2>Click anywhere on the canvas to splash</h2>
+<h2>Click to make the seas tremble</h2>
 <canvas id="exp-canvas" width="500px" height="500px"></canvas>
 
 <h2>Sauce</h2>
 <pre><code class="hljs javascript solarized-dark">$(document).ready(function() {
     /** CONSTANTS **/
-    var SPLASH_STRENGTH = 2;
     var NUM_SAMPLES = 100;
     var STROKE_WIDTH = 2;
 
@@ -165,22 +173,33 @@ $(document).ready(function() {
     $(canvas).click(createSplash);
     requestAnimationFrame(frame);
 
+
     /** FUNCTIONS THAT INTERACT WITH OR ACCESS THE WAVE **/
 
-    // Create a new wave and splash the wave in the center
+    // Create a new wave
     function initWave() {
-        var w = wave({numSamples: NUM_SAMPLES});
-        w.splash(0.5, SPLASH_STRENGTH, true);
-        return w;
+        return wave({numSamples: NUM_SAMPLES});
     }
 
     // Create a splash at the x coordinate of the event.
     // If the click happens above water level, the wave splashes upwards.
     // Otherwise, the wave splashes downwards (dips).
     function createSplash(evt) {
-        var x = evt.offsetX / width;
-        var isPositive = evt.offsetY < height / 2;
-        wavelette.splash(x, SPLASH_STRENGTH, isPositive);
+        var coords = canvasToWaveCoordinates(evt.offsetX, evt.offsetY);
+        
+        // Create general turbulence
+        wavelette.churn(coords.x, coords.y, 0.5);
+
+        // Create a targeted splash towards the clicked location
+        wavelette.splash(coords.x, coords.y, 0.25);
+
+    }
+
+    function canvasToWaveCoordinates(x, y) {
+        return {
+            x: x / width,
+            y: -2 * (y / height - 0.5)
+        };
     }
 
     // One animation frame

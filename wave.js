@@ -7,7 +7,9 @@
  */
 
 /**
- * Defines a sin wave.
+ * Defines a sin wave. This is used to create general
+ * turbulence when CHURN is called.
+ *
  * @typedef {Object} ChildWaveSettings
  * @property {number} amplitude
  * @property {number} period
@@ -22,6 +24,7 @@ var DEFAULT_CHILDREN = [
     {period: 0.5, amplitude: 0.6},
     {period: 0.3, amplitude: 0.2}
 ];
+
 
 /**
  * Defines a single wave with the given settings.
@@ -38,9 +41,6 @@ function wave(settings) {
     var _splashiness = settings.splashiness || DEFAULT_SPLASHINESS;
     var _damping = settings.damping || DEFAULT_DAMPING;
     
-    // THE SWELL
-    var _swell = swell();
-
     // VARS FOR THE WAVE PDE
     var u = new Float32Array(_n); // value of wave at each sample idx
     var u_t = new Float32Array(_n); // velocity at each sample idx
@@ -67,30 +67,6 @@ function wave(settings) {
     }
 
     /**
-     * Advance the swell in the wave by adding up the child waves
-     */
-    function _gain() {
-        var totalVolume = 0;
-
-        // Compute the height of each child wave at each sample
-        // and add the offset to the current height map
-        for(var i = 0; i < _n; i++) {
-            _children.forEach(function(childWaveSettings) {
-                u[i] += _childHeight(i, childWaveSettings);
-            });
-
-            totalVolume += u[i];
-        }
-
-        // Make sure the wave level stays the same. The sum of all
-        // heights at each sample should be 0, at the neutral level.
-        var averageVolume = totalVolume / _n;
-        for (var i = 0; i < _n; i++) {
-            u[i] -= averageVolume;
-        }
-    }
-
-    /**
      * Computes the height of the wave at sample i.
      *
      * @private
@@ -98,18 +74,17 @@ function wave(settings) {
      * @param {nubmer} crestIdx - index of the crest of the wave
      * @param {WaveSettings} settings
      */
-    function _childHeight(i, childWaveSettings) {
+    function _childHeight(i, childWaveSettings, y, phaseShift) {
         // x position of the given sample idx as a float in [0, 1]
         var x = i / _n;
 
         // sine wave params
         var amplitude = childWaveSettings.amplitude;
         var period = childWaveSettings.period;
-        var phaseShift = _swell.phaseShift();
 
         // returns the y value of the child wave at sample i, shifted so that
         // a peak occurs at the current well's index
-        return _swell.strength() * amplitude * Math.sin((2 * Math.PI / period) * (x - phaseShift));
+        return 0.1 * y * amplitude * Math.sin((2 * Math.PI / period) * (x - phaseShift));
     };
 
 
@@ -155,24 +130,71 @@ function wave(settings) {
         // cheat to send the first and last sample
         u[_n - 1] = u[_n - 2];
         u[0] = u[1];
-
-        // If we have a gaining swell in the wave, advance the swell
-        if (_swell.gaining()) {
-            _swell.tick();
-            _gain();
-        }
     };
 
     /**
      * Create a splash in the wave.
      *
-     * @param {number} x - the x position of the splash. Float in [0, 1]
-     * @param {number} strength - the strength of the splash. Float in [0, 10]
-     * @param {boolean} isPositive - if true, then it's an upward splash.
-     *      if false, then it's a downward splash.
+     * @param {number} x - 0 to 1
+     * @param {number} y - -1 to 1
      */
-    function splash(x, strength, isPositive) {
-        _swell.start(x, strength, isPositive);
+    function splash(x, y, strength) {
+        if (strength === undefined) {
+            strength = 1;
+        }
+        var ix = Math.floor(x * _n);
+        var totalVolume = 0;
+        var peak = _clamp((y - u[ix]) * 0.5, -0.1, 0.1);
+        var gaussConstant = Math.max(0.001 / Math.abs(peak), 0.01);
+        var halfNumSamples = Math.floor(_n / 2);
+        for(var i = -halfNumSamples; i < halfNumSamples; i++) {
+            if(ix + i < 0 || ix + i > _n) {
+                continue;
+            }
+            var gauss = strength * (Math.exp(-gaussConstant * i * i) * peak);
+            u_t[ix + i] += gauss;
+            u[ix + i] += gauss;
+            totalVolume += gauss;
+        }
+        var averageVolume = totalVolume / _n;
+        for(var i = 0; i < _n; i++) {
+            u_t[i] -= averageVolume;
+            u[i] -= averageVolume;
+        }
+    }
+
+    /**
+     * Create general turbulence, centered around the given x, y coords
+     *
+     * @param {number} x - 0 to 1
+     * @param {number} y - -1 to 1
+     */
+    function churn(x, y, strength) {
+        if (strength === undefined) {
+            strength = 1;
+        }
+        // compute shift in phase so that the upwards peak is at the given x
+        var phaseShift = x - Math.PI * 0.5;
+
+        // Compute the height of each child wave at each sample
+        // and add the offset to the current height map
+        var totalVolume = 0;
+        for(var i = 0; i < _n; i++) {
+            _children.forEach(function(childWaveSettings) {
+                var h = strength * _childHeight(i, childWaveSettings, y, phaseShift);
+                u_t[i] += h;
+                u[i] += h;
+                totalVolume += h;
+            });
+        }
+
+        // Make sure the wave level stays the same. The sum of all
+        // heights at each sample should be 0, at the neutral level.
+        var averageVolume = totalVolume / _n;
+        for (var i = 0; i < _n; i++) {
+            u_t[i] -= averageVolume;
+            u[i] -= averageVolume;
+        }
     }
 
     /**
@@ -191,106 +213,12 @@ function wave(settings) {
         // actions
         tick: tick,
         splash: splash,
+        churn: churn,
 
         // getters
         height: height
     }
 }
-
-/**
- * Defines a swell in the wave. Keeps track of the current strength
- * of the swell, which is computed via quad out easing.
- */
-function swell() {
-    /** CONSTANTS **/
-    var DEFAULT_TICKS = 100;
-    var MAX_STRENGTH = 10; // [1.0, 10.0], units: permille
-
-    /** PRIVATE VARIABLES **/
-    var _x = 0,
-        _strength = 0,
-        _phaseShift = 0,
-        _gaining = false;
-
-    var _ticks = 0,
-        _currTick = 0;
-
-    var _easingCoefficient = 0;
-        
-    /**
-     * Initialize a new swell.
-     *
-     * @param {number} x - The x position of the swell, a float between [0, 1]
-     * @param {number} strength - The strength of the swell, float between [0, 10]
-     * @param {boolean=} isPositive - if true, then it's an upward swell.
-     *      if false, then it's a downward swell.
-     * @param {number=} ticks - the number of ticks till the swell runs its course
-     */
-    function start(x, strength, isPositive, ticks) {
-        _gaining = true;
-
-        _x = x;
-        _strength = Math.min(strength, MAX_STRENGTH) / 1000;
-        if (!isPositive) {
-            _strength *= -1;
-        }
-
-        // compute shift in phase so that the upwards peak is at the given x
-        _phaseShift = _x - Math.PI * 0.5;
-
-        // reset ticks
-        _currTick = 0;
-        _ticks = ticks || DEFAULT_TICKS;
-
-        _easingCoefficient = -4 * _strength / (_ticks * _ticks);
-    };
-
-    /**
-     * Advance the swell by one tick. Resets the swell if the swell has run
-     * its course.
-     */
-    function tick() {
-        _currTick++;
-        if (_currTick > _ticks) {
-            _gaining = false;
-            _x = 0;
-            _strength = 0;
-            _phaseShift = 0;
-            _currTick = 0;
-            _ticks = 0;
-        }
-    }
-    
-    function x() {
-        return _x;
-    };
-
-    function strength() {
-        // ease quad out
-        return _easingCoefficient * Math.pow(_currTick - _ticks / 2, 2) + _strength;
-    };
-
-    function phaseShift() {
-        return _phaseShift;
-    };
-
-    function gaining() {
-        return _gaining;
-    };
-
-
-    return {
-        // actions
-        start: start,
-        tick: tick,
-
-        // getters
-        x: x,
-        strength: strength,
-        phaseShift: phaseShift,
-        gaining: gaining
-    }
-};
 
 /**
  * Clamps x to [min, max]
