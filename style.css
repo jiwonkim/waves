@@ -50,9 +50,18 @@ a:hover {
     line-height: 1.5em;
 }
 
+#intro p a {
+    font-size: 1em;
+    line-height: 1em;
+}
+
 #intro {
     width: 600px;
     margin: 0 auto;
+}
+
+code.inline {
+    display: inline;
 }
 
 pre {

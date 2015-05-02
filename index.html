@@ -16,9 +16,43 @@
             var w = wave({numSamples: 100});
             render(w, document.getElementById('wave-square-demo'));
 
-            w.splash(0.5, 0.5, 5);
-            w.churn(0.5, 0.5, 5);
+            w.splash(0.5, 0.5, 1);
+            w.churn(0.5, 0.5, 1);
             render(w, document.getElementById('wave-turbulence-demo'));
+
+            w.tick(1);
+            render(w, document.getElementById('wave-propagation-demo-1'));
+
+            w.tick(1);
+            render(w, document.getElementById('wave-propagation-demo-2'));
+
+            w.tick(1);
+            render(w, document.getElementById('wave-propagation-demo-3'));
+
+            for (var i = 0; i < 10; i++) {
+                w.tick(1);
+            }
+            render(w, document.getElementById('wave-propagation-demo-4'));
+
+            for (var i = 0; i < 10; i++) {
+                w.tick(1);
+            }
+            render(w, document.getElementById('wave-propagation-demo-5'));
+
+            for (var i = 0; i < 10; i++) {
+                w.tick(1);
+            }
+            render(w, document.getElementById('wave-propagation-demo-6'));
+
+            for (var i = 0; i < 10; i++) {
+                w.tick(1);
+            }
+            render(w, document.getElementById('wave-propagation-demo-7'));
+
+            for (var i = 0; i < 10; i++) {
+                w.tick(1);
+            }
+            render(w, document.getElementById('wave-propagation-demo-8'));
         });
 
         function render(w, canvas) {
@@ -75,11 +109,29 @@ for (var i = 0; i < 100; i++) {
             <canvas id="wave-square-demo" width="500px" height="100px"></canvas>
             <p>Not very exciting, huh? Let's give it a little splash and turbulence and render it again.</p>
             <pre><code class="hljs javascript">// x [0, 1], y [-1, 1], strength (turbulence multiplier)
-w.splash(0.5, 0.5, 5);
-w.churn(0.5, 0.5, 5);</code></pre>
+w.splash(0.5, 0.5, 1);
+w.churn(0.5, 0.5, 1);</code></pre>
+
             <p>The above should create a splash upwards in the middle of the wave, and also general turbulence ("churn") centered at the same location.</p>
             <canvas id="wave-turbulence-demo" width="500px" height="100px"></canvas>
-            <p>That's pretty much it! Take a look at some demos for inspiration, and refer to the complete list of settings to customize your wave.</p>
+
+            <p>Now let the wave propagate by advancing it (with a delta time) and re-rendering it. </p>
+            <pre><code class="hljs javascript">w.tick(1);</code></pre>
+            <canvas id="wave-propagation-demo-1" width="500px" height="100px"></canvas>
+            <canvas id="wave-propagation-demo-2" width="500px" height="100px"></canvas>
+            <canvas id="wave-propagation-demo-3" width="500px" height="100px"></canvas>
+
+            <p>The next snapshots are taken after fast-forward 10 ticks after each previous snapshot. Pro tip: it creates a smoother transition to call <code class="hljs javascript inline">w.tick(1)</code> than to make one call to <code class="hljs javascript inline">w.tick(10)</code>.</p>
+            <pre><code class="hljs javascript">for (var i = 0; i < 10; i++) {
+    w.tick(1);
+}</code></pre>
+            <canvas id="wave-propagation-demo-4" width="500px" height="100px"></canvas>
+            <canvas id="wave-propagation-demo-5" width="500px" height="100px"></canvas>
+            <canvas id="wave-propagation-demo-6" width="500px" height="100px"></canvas>
+            <canvas id="wave-propagation-demo-7" width="500px" height="100px"></canvas>
+            <canvas id="wave-propagation-demo-8" width="500px" height="100px"></canvas>
+
+            <p>That's pretty much it! Take a look at some <a href="#demos">demos</a> for inspiration, and refer to the <a href="#settings">complete list of settings</a> to customize your wave.</p>
             <h2 id="demos">Demos</h2>
                 <a href="demos/hello_wave.html">Hello Wave</a><br>
                 <a href="demos/surfing-duckies.html">Surfing Duckies</a>
