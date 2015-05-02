@@ -79,7 +79,7 @@
         <div id="intro">
             <h1>wave.js</h1>
             <p class="help">A simple module to simulate dynamic waves<br>using the 1-dimensional wave PDE</p>
-            <a href="#usage">usage</a> | <a href="#demos">demos</a> | <a href="implementaton">implementation</a>
+            <a href="#usage">usage</a> | <a href="#settings">settings</a> | <a href="#demos">demos</a> | <a href="#implementation">implementation</a>
             <h2 id="usage">Usage</h2>
             <p>
             You can create a wave like so:
@@ -132,6 +132,56 @@ w.churn(0.5, 0.5, 1);</code></pre>
             <canvas id="wave-propagation-demo-8" width="500px" height="100px"></canvas>
 
             <p>That's pretty much it! Take a look at some <a href="#demos">demos</a> for inspiration, and refer to the <a href="#settings">complete list of settings</a> to customize your wave.</p>
+            <h2 id="settings">Settings</h2>
+            <p>When wave is invoked with no arguments, the default settings are used. But you can manually specify the settings to customize the behavior of the wave.</p>
+            <table id="settings-table">
+                <tr>
+                    <td><code>numSamples</code></td>
+                    <td>
+                        <p>Default: <code>100</code></p>
+                        <p>The number of samples that the wave will consist of.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td><pre>splashiness</pre></td>
+                    <td>
+                        <p>Default: <code>0.01</code></p>
+                        <p>This is the constant used in the one-dimensional wave PDE, descripted <a href="#implementation">here</a>. Higher value will mean faster propagation and more exaggerated splashes.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td><pre>damping</pre></td>
+                    <td>
+                        <p>Default: <code>0.995</code></p>
+                        <p>This value is multiplied to the wave's velocity for each time step, so that a splash will eventually die down. If the damping is det to <code>1</code>, the wave will keep on splashing forever.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td><pre>children</pre></td>
+                    <td>
+                        <p>Default:<p>
+                        <pre><code class="hljs javascript">[
+    {period: 0.25, amplitude: 0.2},
+    {period: 0.5, amplitude: 0.6},
+    {period: 0.3, amplitude: 0.2}
+]</code></pre>
+                        <p>This is what the wave is made out of when <code>churn</code> is called. Each child wave is shifted to the correct phase and added on top of each other to create an organic turbulence across the wave.</p>
+                        <p>The units are in wave-space x and y, where x spans 0 to 1 and y spans -1 to 1. The amplitudes are normalized to add up to 1.</p>
+                    </td>
+                </tr>
+            </table>
+            <p>Here's an example that creates a wave that's splashier than the default but dies down faster, with a more complex churn:</p>
+            <pre><code class="hljs javascript">var w = wave({
+    numSamples: 100,   
+    splashiness: 0.05,
+    damping: 0.9,
+    children: [
+        {period: 0.2, amplitude: 0.2},
+        {period: 0.3, amplitude: 0.3},
+        {period: 0.4, amplitude: 0.4},
+        {period: 0.5, amplitude: 0.1}
+    ]
+})</code></pre>
             <h2 id="demos">Demos</h2>
                 <a href="demos/hello_wave.html">Hello Wave</a><br>
                 <a href="demos/surfing-duckies.html">Surfing Duckies</a>

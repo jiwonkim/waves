@@ -19,7 +19,7 @@ h2 {
 
 h3 {
     font-size: 2em;
-    color: #080;
+    color: #5a8;
     line-height: 0.9em;
 }
 
@@ -73,6 +73,16 @@ p {
     margin-bottom: 20px;
 }
 
+#settings-table {
+    border-collapse: collapse;
+}
+
+#settings-table td {
+    vertical-align: top;
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
 #implementation p b {
     display: block;
 }
@@ -85,7 +95,7 @@ p {
     font-size: 1.2em;
     display: inline;
     font-family: monospace;
-    color: #080;
+    color: #5a8;
     white-space: pre;
 }
 
