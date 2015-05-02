@@ -64,6 +64,19 @@ function wave(settings) {
         children.forEach(function(childWaveSettings) {
             childWaveSettings.amplitude /= totalAmplitude;
         });
+        return children;
+    }
+
+    function _normalizeVolume() {
+        // total height should always add up to 0
+        var sum = 0;
+        for (var i = 0; i < _n; i++) {
+            sum += u[i];
+        }
+        var avgDiff = sum / _n;
+        for (var i = 0; i < _n; i++) {
+            u[i] -= avgDiff;
+        }
     }
 
     /**
@@ -100,6 +113,7 @@ function wave(settings) {
         if (dt === undefined) {
             dt = 0.1;
         }
+        _normalizeVolume();
         var dx = 1. / _n; // change in x per value in u
 
         // compute dx for each increment of x
@@ -178,23 +192,15 @@ function wave(settings) {
 
         // Compute the height of each child wave at each sample
         // and add the offset to the current height map
-        var totalVolume = 0;
         for(var i = 0; i < _n; i++) {
             _children.forEach(function(childWaveSettings) {
                 var h = strength * _childHeight(i, childWaveSettings, y, phaseShift);
                 u_t[i] += h;
                 u[i] += h;
-                totalVolume += h;
             });
         }
 
-        // Make sure the wave level stays the same. The sum of all
-        // heights at each sample should be 0, at the neutral level.
-        var averageVolume = totalVolume / _n;
-        for (var i = 0; i < _n; i++) {
-            u_t[i] -= averageVolume;
-            u[i] -= averageVolume;
-        }
+        _normalizeVolume();
     }
 
     /**
