@@ -3,18 +3,88 @@
     <head>
         <title>Waves</title>
         <link rel="stylesheet" type="text/css" href="style.css">
+
+        <!-- Highlight JS -->
+        <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/styles/tomorrow.min.css">
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
+
+        <script src="jquery-1.11.2.min.js"></script>
+        <script src="wave.js"></script>
+        <script>
+        $(document).ready(function() {
+            var w = wave({numSamples: 100});
+            render(w, document.getElementById('wave-square-demo'));
+
+            w.splash(0.5, 0.5, 5);
+            w.churn(0.5, 0.5, 5);
+            render(w, document.getElementById('wave-turbulence-demo'));
+        });
+
+        function render(w, canvas) {
+            var context = canvas.getContext('2d');
+            var unitX = canvas.width / 100;
+            for (var i = 0; i < 100; i++) {
+                // value between -1 and 1, where 0 is the neutral wave level
+                var waveHeight = w.height(i);
+
+                // draw a 1x1 pixel square at the wave
+                context.fillRect(
+                    i * unitX,
+                    canvas.height / 2 - (canvas.height / 2) * waveHeight,
+                    2,
+                    2
+                );
+            }
+        }
+        </script>
     </head>
     <body>
         <a href="http://github.com/jiwonkim/waves"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a>
 
         <div id="intro">
             <h1>wave.js</h1>
-            <h2>Usage</h2>
-            <h2>Demos</h2>
-        </div>
+            <p class="help">A simple module to simulate dynamic waves<br>using the 1-dimensional wave PDE</p>
+            <a href="#usage">usage</a> | <a href="#demos">demos</a> | <a href="implementaton">implementation</a>
+            <h2 id="usage">Usage</h2>
+            <p>
+            You can create a wave like so:
+            </p>
+            <pre><code class="hljs javascript">var w = wave();</code></pre>
+            <p>Now you have a wave with some default settings. Let's explicitly pass in the number of samples the wave is made of.</p>
+            <pre><code class="hljs javascript">var w = wave({
+    numSamples: 100
+});</code></pre>
+            <p>Cool! Now render the wave. Since the height of the wave spans -1 to 1, we'll need to translate that into canvas coordinates. Let's make it so that we just draw a dot at each sample.</p>
+            <pre><code class="hljs javascript">var canvas = document.getElementById('#wave-canvas');
+var context = canvas.getContext('2d');
+var unitX = canvas.width / 100;
+for (var i = 0; i < 100; i++) {
+    // value between -1 and 1, where 0 is the neutral wave level
+    var waveHeight = w.height(i);
+
+    // draw a 2x2-pixel square at the wave
+    context.fillRect(
+        i * unitX,
+        canvas.height / 2 - (canvas.height / 2) * waveHeight,
+        2,
+        2
+    );
+}</code></pre>
+            <p>Here's the result:</p>
+            <canvas id="wave-square-demo" width="500px" height="100px"></canvas>
+            <p>Not very exciting, huh? Let's give it a little splash and turbulence and render it again.</p>
+            <pre><code class="hljs javascript">// x [0, 1], y [-1, 1], strength (turbulence multiplier)
+w.splash(0.5, 0.5, 5);
+w.churn(0.5, 0.5, 5);</code></pre>
+            <p>The above should create a splash upwards in the middle of the wave, and also general turbulence ("churn") centered at the same location.</p>
+            <canvas id="wave-turbulence-demo" width="500px" height="100px"></canvas>
+            <p>That's pretty much it! Take a look at some demos for inspiration, and refer to the complete list of settings to customize your wave.</p>
+            <h2 id="demos">Demos</h2>
+                <a href="demos/hello_wave.html">Hello Wave</a><br>
+                <a href="demos/surfing-duckies.html">Surfing Duckies</a>
         
-        <div id="implementation">
-            <h2>Implementation details</h2>
+            <h2 id="implementation">Implementation details</h2>
             <h3>Step 1: Grab the PDE for a one dimensional wave</h3>
             <p>
                 From the <a href="http://en.wikipedia.org/wiki/Partial_differential_equation#Wave_equation_in_one_spatial_dimension">Wikipedia entry for the wave equation</a>:
