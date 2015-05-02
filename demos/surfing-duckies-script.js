@@ -5,7 +5,6 @@ $(document).ready(function() {
     var height = canvas.height;
     var t_0 = new Date().getTime() / 1000;
     var t = 0;
-    var dt = 0.01; // simulation step size in seconds
     var n = 100; // number of samples
 
     var waveColors = [
@@ -38,6 +37,7 @@ $(document).ready(function() {
             ]
         })
     ];
+
     $(canvas).click(function(evt) {
         var coords = canvasToWaveCoordinates(evt.offsetX, evt.offsetY);
         waves.forEach(function(w) {
@@ -76,17 +76,8 @@ $(document).ready(function() {
 
                 theta: 0
             },
-            function(x) {
-                return Math.floor((x / width) * n);
-            },
-            function(idx) {
-                return Math.floor((idx / n) * width);
-            },
-            function(idx) {
-                var coords = waveToCanvasCoordinates(0, waves[0].height(idx));
-                return coords.y;
-            }
-        )/*,
+            n
+        ),
         flotsam(
             canvas,
             'assets/duck-violet.png',
@@ -101,8 +92,9 @@ $(document).ready(function() {
                 vy: 0,
 
                 theta: 0
-            }
-        ),*/
+            },
+            n
+        ),
     ];
 
     requestAnimationFrame(frame);
@@ -114,26 +106,16 @@ $(document).ready(function() {
     }
 
     function physics() {
-        for (var i = 0; i < 10; i++) {
-            waves.forEach(function(waveInstance) {
-                waveInstance.tick();
-            });
-            flotsams.forEach(function(flotsamInstance) {
-                flotsamInstance.physics(dt);
-            });
-        }
-        /*
         var t_now = new Date().getTime() / 1000 - t_0; // time in seconds
         while(t < t_now) {
             waves.forEach(function(waveInstance) {
-                waveInstance.tick(dt);
+                waveInstance.tick(0.5);
             });
             flotsams.forEach(function(flotsamInstance) {
-                flotsamInstance.physics(dt);
+                flotsamInstance.physics(0.01);
             });
-            t += dt;
+            t += 0.01;
         }
-        */
     }
 
     function render() {
@@ -204,18 +186,17 @@ $(document).ready(function() {
  * @param {string} path
  * @param {Object} waveInstance
  * @param {FlotsamState} state
+ * @param {number} n - number of samples
  */
-function flotsam(canvas, path, waveInstance, state, getIndex, getX, getY) {
+function flotsam(canvas, path, waveInstance, state, n) {
     var _canvas = canvas,
+        _width = canvas.width,
+        _height = canvas.height,
         _context = canvas.getContext('2d'),
         _wave = waveInstance,
         _state = state,
         _image = new Image();
 
-    var _getIndex = getIndex,
-        _getX = getX,
-        _getY = getY;
-        
     _image.loaded = false;
     _image.src = path;
     _image.onload = function() {
@@ -229,41 +210,19 @@ function flotsam(canvas, path, waveInstance, state, getIndex, getX, getY) {
     var ROTATIONAL_INERTIA = 20;
     var WATER_FRICTION = 10;
 
-    var _physics = function(dt) {
-        if (!_image.loaded) {
-            return;
-        }
-        var idx = _getIndex(_state.px);
-        var theta = _computeTheta(idx);
-        var dy = _getY(idx) - _state.py;
+    /** Private functions **/
 
-        _accelerate(theta, dy, dt); // compute and apply acceleration
-        _drag(dy, dt); // apply friction
-        _bounce(); // bounce off the edges of the bowl
+    function _getSampleIndex(x) {
+        return Math.floor((x / _width) * n);
+    }
 
-        // update position with computed velocity
-        _state.px += _state.vx;
-        _state.py += _state.vy;
+    function _getX(idx) {
+        return Math.floor((idx / n) * _width);
+    }
 
-        _rotate(theta, dy); // rotate flotsam
-    };
-
-    var _render = function() {
-        if (!_image.loaded) {
-            return;
-        }
-
-        _context.translate(_state.px, _state.py);
-
-        // rotate the flotsam so that it sits on the wave's tangent
-        _context.rotate(_state.theta);
-
-        // draw the flotsam so that the bottom touches the wave
-        _context.drawImage(_image, _image.width * -0.5, _image.height * -1.);
-
-        // reset context
-        _resetTransformationMatrix();
-    };
+    function _getY(idx) {
+        return (_wave.height(idx) / -2 + 0.5) * _height;
+    }
 
     var _computeTheta = function(idx) {
         var dy, dx;
@@ -294,9 +253,7 @@ function flotsam(canvas, path, waveInstance, state, getIndex, getX, getY) {
         _state.vy += ny * a * dt;
     };
 
-    /**
-     * Apply friction to dampen velocity if below the water
-     */
+    // Apply friction to dampen velocity if below the water
     var _drag = function(dy, dt) {
         if (dy < 0) { 
             _state.vx *= (1 - WATER_FRICTION * dt);
@@ -304,9 +261,7 @@ function flotsam(canvas, path, waveInstance, state, getIndex, getX, getY) {
         }
     };
 
-    /**
-     * Bounce off the sides of the tubby tub tubb
-     */
+    // Bounce off the sides of the tubby tub tubb
     var _bounce = function() {
         var bowlCenterX = _canvas.width / 2;
         var bowlCenterY = _canvas.width / 2;
@@ -327,21 +282,56 @@ function flotsam(canvas, path, waveInstance, state, getIndex, getX, getY) {
         }
     };
 
-    /**
-     * Rotate the flotsam if below the water
-     */
+    // Rotate the flotsam if below the water
     var _rotate = function(theta, dy) {
         if (dy < 0) {
           _state.theta += (theta - _state.theta) * (1 / ROTATIONAL_INERTIA);
         }
     };
 
-    /**
-     * Reset the transformation matrix to identity
-     */
+    // Reset the transformation matrix to identity
     var _resetTransformationMatrix = function() {
         _context.translate(0, 0);
         _context.setTransform(1, 0, 0, 1, 0, 0);
+    };
+
+
+    /** Public functions **/
+
+    var _physics = function(dt) {
+        if (!_image.loaded) {
+            return;
+        }
+        var idx = _getSampleIndex(_state.px);
+        var theta = _computeTheta(idx);
+        var dy = _getY(idx) - _state.py;
+
+        _accelerate(theta, dy, dt); // compute and apply acceleration
+        _drag(dy, dt); // apply friction
+        _bounce(); // bounce off the edges of the bowl
+
+        // update position with computed velocity
+        _state.px += _state.vx;
+        _state.py += _state.vy;
+
+        _rotate(theta, dy); // rotate flotsam
+    };
+
+    var _render = function() {
+        if (!_image.loaded) {
+            return;
+        }
+
+        _context.translate(_state.px, _state.py);
+
+        // rotate the flotsam so that it sits on the wave's tangent
+        _context.rotate(_state.theta);
+
+        // draw the flotsam so that the bottom touches the wave
+        _context.drawImage(_image, _image.width * -0.5, _image.height * -1.);
+
+        // reset context
+        _resetTransformationMatrix();
     };
 
     return {
