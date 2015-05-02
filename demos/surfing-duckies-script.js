@@ -60,8 +60,6 @@ $(document).ready(function() {
         }
     }
 
-    var flotsams = [];
-/*
     var flotsams = [
         flotsam(
             canvas,
@@ -77,8 +75,18 @@ $(document).ready(function() {
                 vy: 0,
 
                 theta: 0
+            },
+            function(x) {
+                return Math.floor((x / width) * n);
+            },
+            function(idx) {
+                return Math.floor((idx / n) * width);
+            },
+            function(idx) {
+                var coords = waveToCanvasCoordinates(0, waves[0].height(idx));
+                return coords.y;
             }
-        ),
+        )/*,
         flotsam(
             canvas,
             'assets/duck-violet.png',
@@ -94,9 +102,8 @@ $(document).ready(function() {
 
                 theta: 0
             }
-        ),
+        ),*/
     ];
-    */
 
     requestAnimationFrame(frame);
 
@@ -110,6 +117,9 @@ $(document).ready(function() {
         for (var i = 0; i < 10; i++) {
             waves.forEach(function(waveInstance) {
                 waveInstance.tick();
+            });
+            flotsams.forEach(function(flotsamInstance) {
+                flotsamInstance.physics(dt);
             });
         }
         /*
@@ -195,12 +205,16 @@ $(document).ready(function() {
  * @param {Object} waveInstance
  * @param {FlotsamState} state
  */
-function flotsam(canvas, path, waveInstance, state) {
+function flotsam(canvas, path, waveInstance, state, getIndex, getX, getY) {
     var _canvas = canvas,
         _context = canvas.getContext('2d'),
         _wave = waveInstance,
         _state = state,
         _image = new Image();
+
+    var _getIndex = getIndex,
+        _getX = getX,
+        _getY = getY;
         
     _image.loaded = false;
     _image.src = path;
@@ -219,9 +233,9 @@ function flotsam(canvas, path, waveInstance, state) {
         if (!_image.loaded) {
             return;
         }
-        var idx = _wave.getIndex(_state.px);
+        var idx = _getIndex(_state.px);
         var theta = _computeTheta(idx);
-        var dy = _wave.getY(idx) - _state.py;
+        var dy = _getY(idx) - _state.py;
 
         _accelerate(theta, dy, dt); // compute and apply acceleration
         _drag(dy, dt); // apply friction
@@ -253,8 +267,8 @@ function flotsam(canvas, path, waveInstance, state) {
 
     var _computeTheta = function(idx) {
         var dy, dx;
-        dy = _wave.getY(idx + 5) - _wave.getY(idx - 5);
-        dx = _wave.getX(idx + 5) - _wave.getX(idx - 5);
+        dy = _getY(idx + 5) - _getY(idx - 5);
+        dx = _getX(idx + 5) - _getX(idx - 5);
         return Math.atan2(dy, dx);
     };
 
