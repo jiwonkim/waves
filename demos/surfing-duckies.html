@@ -1,0 +1,47 @@
+<html>
+    <meta charset="UTF-8">
+    <head>
+        <title>Waves</title>
+        <script src="../jquery-1.11.2.min.js"></script>
+        <script src="../wave.js"></script>
+        <script src="script.js"></script>
+        <style>
+            body {
+                font-family: "Helvetica Neue", Helvetica, sans-serif;
+                text-align: center;
+            }
+
+            h1 {
+                font-size: 4em;
+                font-weight: 200;
+                margin-bottom: 0;
+            }
+
+            h2 {
+                font-size: 3em;
+            }
+
+            .help {
+                font-size: 2.5em;
+                font-weight: 200;
+                margin-top: 20px;
+                margin-bottom: 0;
+                color: #a0d2c0;
+            }
+
+            canvas {
+                cursor: pointer;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                outline: none;
+                -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Here are some rubber duckies</h1>
+        <p class="help">Click above or below the water to make them surf 👆 </p>
+        <canvas id="waves-canvas" width="500" height="500"></canvas>
+    </body>
+</html>
