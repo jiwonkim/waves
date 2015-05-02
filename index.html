@@ -89,7 +89,7 @@
             <pre><code class="hljs javascript">var w = wave({
     numSamples: 100
 });</code></pre>
-            <p>Cool! Now render the wave. Since the height of the wave spans -1 to 1, we'll need to translate that into canvas coordinates. Let's make it so that we just draw a dot at each sample.</p>
+            <p>Cool! Now render the wave. Since the width of the wave spans 0 to 1 and the height of the wave spans -1 to 1, we'll need to translate these into canvas coordinates. Let's make it so that we just draw a dot at each sample.</p>
             <pre><code class="hljs javascript">var canvas = document.getElementById('#wave-canvas');
 var context = canvas.getContext('2d');
 var unitX = canvas.width / 100;
@@ -121,7 +121,7 @@ w.churn(0.5, 0.5, 1);</code></pre>
             <canvas id="wave-propagation-demo-2" width="500px" height="100px"></canvas>
             <canvas id="wave-propagation-demo-3" width="500px" height="100px"></canvas>
 
-            <p>The next snapshots are taken after fast-forward 10 ticks after each previous snapshot. Pro tip: it creates a smoother transition to call <code class="hljs javascript inline">w.tick(1)</code> than to make one call to <code class="hljs javascript inline">w.tick(10)</code>.</p>
+            <p>The next snapshots are taken after fast-forwarding 10 ticks after each previous snapshot. Pro tip: it creates a smoother transition to call <code class="hljs javascript inline">w.tick(1)</code> than to make one call to <code class="hljs javascript inline">w.tick(10)</code>.</p>
             <pre><code class="hljs javascript">for (var i = 0; i < 10; i++) {
     w.tick(1);
 }</code></pre>
