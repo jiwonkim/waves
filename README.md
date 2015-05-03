@@ -115,7 +115,9 @@ var w = wave({
 ## Implementation
 
 ### Step 1: Grab the PDE for a one dimensional wave
-        From the <a href="http://en.wikipedia.org/wiki/Partial_differential_equation#Wave_equation_in_one_spatial_dimension">Wikipedia entry for the wave equation</a>:
+
+From the [Wikipedia entry for the wave equation](http://en.wikipedia.org/wiki/Partial_differential_equation#Wave_equation_in_one_spatial_dimension):
+
 ```
 u_tt = c^2 * u_xx
 ```
