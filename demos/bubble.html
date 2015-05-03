@@ -1,0 +1,80 @@
+<html>
+<head> <script src="../jquery-1.11.2.min.js"></script>
+<script src="../wave.js"></script>
+<!-- Highlight JS -->
+<!--link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/styles/monokai.min.css">
+<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/highlight.min.js"></script-->
+
+<script>
+//hljs.initHighlightingOnLoad();
+$(document).ready(function() {
+    var NUM_SAMPLES = 100;
+    var canvas = document.getElementById('buttbutt-canvas');
+    var context = canvas.getContext('2d');
+    var width = canvas.width;
+    var height = canvas.height;
+    var r = Math.min(width, height) / 3;
+
+    var w = wave({
+        numSamples: NUM_SAMPLES,
+        ouroboros: true
+    });
+
+    $(canvas).click(function(evt) {
+        var strength = 0.5;
+        if (context.isPointInPath(evt.offsetX, evt.offsetY)) {
+            strength *= -1;
+        }
+        
+        w.splash(0.25, 0.5, strength);
+        w.churn(0.25, 0.5, strength);
+    });
+
+    requestAnimationFrame(frame);
+
+    function frame() {
+        for (var i = 0; i < 10; i++) {
+            w.tick(0.1);
+        }
+        renderWave();
+        requestAnimationFrame(frame);
+    }
+
+    function renderWave() {
+        context.clearRect(0, 0, width, height);
+        context.lineWidth = 2;
+
+        //var unitTheta = Math.PI * 2 / (2 * NUM_SAMPLES - 1);
+        var unitTheta = Math.PI * 2 / (NUM_SAMPLES - 1);
+        context.translate(width/2, height/2);
+
+        context.beginPath();
+        context.moveTo(r + w.height(0) * r, 0);
+
+        for (var i = 1; i < NUM_SAMPLES; i++) {
+            context.rotate(unitTheta);
+            context.lineTo(r + w.height(i) * r, 0);
+        }
+
+        /*
+        for (var i = NUM_SAMPLES - 1; i >= 0; i--) {
+            context.rotate(unitTheta);
+            context.lineTo(r + w.height(i) * r, 0);
+        }
+        */
+
+        context.closePath();
+        context.stroke();
+
+        // Set the current transformation on the context back to
+        // what we started with
+        context.translate(0, 0);
+        context.setTransform(1, 0, 0, 1, 0, 0);
+    }
+});
+</script>
+</head>
+<body>
+<canvas id="buttbutt-canvas" width="500px" height="500px"></canvas>
+<body>
+</html>
