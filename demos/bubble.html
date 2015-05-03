@@ -33,11 +33,11 @@ $(document).ready(function() {
             splashX = -0.5 * theta / Math.PI;
         }
 
-        var strength = 0.2;
+        var strength = 0.5;
         if (context.isPointInPath(evt.offsetX, evt.offsetY)) {
-            // do something
+            strength *= -1;
         }
-        w.splash(splashX, 1, strength);
+        w.splash(splashX, 1, strength/2);
         w.churn(splashX, 1, strength);
     });
 
@@ -52,11 +52,45 @@ $(document).ready(function() {
     }
 
     function renderWave() {
+        var unitTheta = Math.PI * 2 / NUM_SAMPLES;
+
+        context.globalCompositeOperation = 'destination-over';
         context.clearRect(0, 0, width, height);
         context.lineWidth = 2;
 
-        var unitTheta = Math.PI * 2 / NUM_SAMPLES;
         context.translate(width/2, height/2);
+        context.save()
+
+        // Draw the smile
+        var startIdx = Math.floor((NUM_SAMPLES / 2) * 0.05);
+        var endIdx = Math.floor((NUM_SAMPLES / 2) * 0.95);
+
+        context.beginPath();
+        context.rotate(startIdx * unitTheta);
+        context.moveTo(r/2 + w.height(startIdx) * r/2, 0);
+
+        for (var i = startIdx + 1; i < endIdx; i++) {
+            context.rotate(unitTheta);
+            context.lineTo(r/2 + w.height(i) * r/2, 0);
+        }
+        context.stroke();
+
+        // Draw the eyes
+        context.restore();
+        context.save();
+
+        context.beginPath();
+        context.rotate(unitTheta * NUM_SAMPLES * 0.6);
+        context.arc(r/2 * w.height(Math.floor(NUM_SAMPLES * 0.6)) + r/2, 0, 5, 0, Math.PI * 2, false);
+        context.fillStyle = 'black';
+        context.fill();
+
+        context.rotate(unitTheta * NUM_SAMPLES * 0.3);
+        context.arc(r/2 * w.height(Math.floor(NUM_SAMPLES * 0.9)) + r/2, 0, 5, 0, Math.PI * 2, false);
+        context.fillStyle = 'black';
+        context.fill();
+
+        context.restore();
 
         context.beginPath();
         context.moveTo(r + w.height(0) * r, 0);
@@ -65,7 +99,6 @@ $(document).ready(function() {
             context.rotate(unitTheta);
             context.lineTo(r + w.height(i) * r, 0);
         }
-
         context.closePath();
 
         var gradient = context.createRadialGradient(0, 0, 0, 0, 0, r*2);
@@ -74,31 +107,6 @@ $(document).ready(function() {
         context.fillStyle = gradient;
         context.fill();
         context.stroke();
-
-        /*
-        // Draw the smile
-        context.setTransform(1, 0, 0, 1, 0, 0);
-        context.translate(width/2, height/2);
-
-        context.moveTo(r/2 + w.height(0) * r/2, 0);
-        for (var i = 1; i < NUM_SAMPLES; i++) {
-            context.rotate(unitTheta);
-            context.lineTo(r/2 + w.height(i) * r/2, 0);
-        }
-        context.stroke();
-
-        // Draw the eyes
-        context.beginPath();
-        context.rotate(unitTheta * NUM_SAMPLES * 0.25);
-        context.arc(r/2 * w.height(Math.floor(NUM_SAMPLES * 0.75)) + r/2, 0, 5, 0, Math.PI * 2, false);
-        context.fillStyle = 'black';
-        context.fill();
-
-        context.rotate(unitTheta * NUM_SAMPLES * 0.5);
-        context.arc(r/2 * w.height(Math.floor(NUM_SAMPLES * 0.25)) + r/2, 0, 5, 0, Math.PI * 2, false);
-        context.fillStyle = 'black';
-        context.fill();
-        */
 
         // Set the current transformation on the context back to
         // what we started with

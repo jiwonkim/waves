@@ -120,40 +120,29 @@ function wave(settings) {
         var dx = 1. / _n; // change in x per value in u
 
         // compute dx for each increment of x
-        for (var i = 0; i < _n - 1; i++) {
-            u_x[i] = (u[i + 1] - u[i]) / dx;
-        }
+        for (var i = 0; i < _n; i++) {
+            if (!_wrap && i >= _n - 1) continue;
 
-        if (_wrap) {
-            u_x[_n - 1] = (u[0] - u[_n - 1]) / dx;
+            u_x[i] = (u[(i + 1) % _n] - u[i]) / dx;
         }
 
         var c2 = _splashiness * _splashiness; // Constant C^2
-        for (var i = 0; i < _n - 2; i++) {
+        for (var i = 0; i < _n; i++) {
+            if (!_wrap && i >= _n - 2) continue;
+
             // compute second derivative wrt x
-            var u_xx_i = (u_x[i + 1] - u_x[i]) / dx;
+            var u_xx_i = (u_x[(i + 1) % _n] - u_x[i]) / dx;
 
             // then use it to compute second derivative wrt t
             u_tt[i] = c2 * u_xx_i;
         }
 
-        if (_wrap) {
-            u_tt[_n - 2] = c2 * (u_x[_n - 1] - u_x[_n - 2]) / dx;
-            u_tt[_n - 1] = c2 * (u_x[0] - u_x[_n - 1]) / dx;
-        }
-
         // update u_t according to u_tt
-        for (var i = 1; i < _n - 1; i++) {
-            u_t[i] += u_tt[i - 1] * dt;
-            u_t[i] *= _damping;
-        }
-        
-        if (_wrap) {
-            u_t[0] += u_tt[_n - 1] * dt;
-            u_t[0] *= _damping;
+        for (var i = 0; i < _n; i++) {
+            if (!_wrap && (i === 0 || i >= _n - 1)) continue;
 
-            u_t[_n - 1] += u_tt[_n - 2] * dt;
-            u_t[_n - 1] *= _damping;
+            u_t[i] += u_tt[(_n + i - 1) % _n] * dt;
+            u_t[i] *= _damping;
         }
 
         // update u
@@ -190,8 +179,8 @@ function wave(settings) {
             }
             var sampleIdx = (ix + i) % _n;
             var gauss = strength * (Math.exp(-gaussConstant * i * i) * peak);
-            u_t[ix + i] += gauss;
-            u[ix + i] += gauss;
+            u_t[sampleIdx] += gauss;
+            u[sampleIdx] += gauss;
             totalVolume += gauss;
         }
         var averageVolume = totalVolume / _n;
