@@ -109,8 +109,9 @@ var w = wave({
 
 ## Demos
 
-[Hello Wave](http://jiwonk.im/wave/demos/hello_wave.html)
+[Hello Wave](http://jiwonk.im/wave/demos/hello-wave.html)
 [Surfing Duckies](http://jiwonk.im/wave/demos/surfing-duckies.html)
+[Wobble the Bubble](http://jiwonk.im/wave/demos/bubble.html)
 
 ## Implementation
 
