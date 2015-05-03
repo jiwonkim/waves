@@ -16,18 +16,22 @@ $(document).ready(function() {
     var r = Math.min(width, height) / 3;
 
     var w = wave({
-        numSamples: NUM_SAMPLES,
-        ouroboros: true
+        numSamples: NUM_SAMPLES
     });
 
     $(canvas).click(function(evt) {
-        var strength = 0.5;
+        var x, y;
+        x = evt.offsetX - width/2;
+        y = -evt.offsetY + height/2;
+
+        var splashX = Math.abs(Math.atan2(y, x)) / Math.PI * 0.99;
+
+        var strength = 0.2;
         if (context.isPointInPath(evt.offsetX, evt.offsetY)) {
-            strength *= -1;
+            // do something
         }
-        
-        w.splash(0.25, 0.5, strength);
-        w.churn(0.25, 0.5, strength);
+        w.splash(splashX, 1, strength);
+        w.churn(splashX, 1, strength);
     });
 
     requestAnimationFrame(frame);
@@ -44,8 +48,7 @@ $(document).ready(function() {
         context.clearRect(0, 0, width, height);
         context.lineWidth = 2;
 
-        //var unitTheta = Math.PI * 2 / (2 * NUM_SAMPLES - 1);
-        var unitTheta = Math.PI * 2 / (NUM_SAMPLES - 1);
+        var unitTheta = Math.PI * 2 / (NUM_SAMPLES * 2 - 1);
         context.translate(width/2, height/2);
 
         context.beginPath();
@@ -56,25 +59,75 @@ $(document).ready(function() {
             context.lineTo(r + w.height(i) * r, 0);
         }
 
-        /*
         for (var i = NUM_SAMPLES - 1; i >= 0; i--) {
             context.rotate(unitTheta);
             context.lineTo(r + w.height(i) * r, 0);
         }
-        */
 
         context.closePath();
+
+        var gradient = context.createRadialGradient(0, 0, 0, 0, 0, r*2);
+        gradient.addColorStop(0, 'rgba(200, 90, 50, 0.1)');
+        gradient.addColorStop(1, 'rgba(200, 90, 50, 0.5)');
+        context.fillStyle = gradient;
+        context.fill();
         context.stroke();
+
+        // Draw the smile
+        context.setTransform(1, 0, 0, 1, 0, 0);
+        context.translate(width/2, height/2);
+
+        context.moveTo(r/2 + w.height(0) * r/2, 0);
+        for (var i = 1; i < NUM_SAMPLES; i++) {
+            context.rotate(unitTheta);
+            context.lineTo(r/2 + w.height(i) * r/2, 0);
+        }
+        context.stroke();
+
+        // Draw the eyes
+        context.beginPath();
+        context.rotate(unitTheta * NUM_SAMPLES * 0.25);
+        context.arc(r/2 * w.height(Math.floor(NUM_SAMPLES * 0.75)) + r/2, 0, 5, 0, Math.PI * 2, false);
+        context.fillStyle = 'black';
+        context.fill();
+
+        context.rotate(unitTheta * NUM_SAMPLES * 0.5);
+        context.arc(r/2 * w.height(Math.floor(NUM_SAMPLES * 0.25)) + r/2, 0, 5, 0, Math.PI * 2, false);
+        context.fillStyle = 'black';
+        context.fill();
 
         // Set the current transformation on the context back to
         // what we started with
-        context.translate(0, 0);
         context.setTransform(1, 0, 0, 1, 0, 0);
     }
 });
 </script>
+<style>
+body {
+    text-align: center;
+    font-family: Helvetica Neue, sans-serif;
+}
+
+h1 {
+    font-size: 64px;
+    font-weight: 200;
+    margin: 0;
+}
+
+canvas {
+    cursor: pointer;
+}
+
+code {
+    width: 800px;
+    margin: 20px auto;
+    text-align: left;
+    font-family: Andale Mono, sans-serif;
+}
+</style>
 </head>
 <body>
+<h1>Wobble the Bubble</h1>
 <canvas id="buttbutt-canvas" width="500px" height="500px"></canvas>
 <body>
 </html>

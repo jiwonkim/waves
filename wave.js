@@ -3,7 +3,6 @@
  * @property {number} numSamples
  * @property {number} splashiness
  * @property {number} damping
- * @property {boolean} ouroboros
  * @property {Array.<ChildWaveSettings>} children
  */
 
@@ -42,7 +41,6 @@ function wave(settings) {
     var _children = _normalizeAmplitudes(settings.children) || DEFAULT_CHILDREN;
     var _splashiness = settings.splashiness || DEFAULT_SPLASHINESS;
     var _damping = settings.damping || DEFAULT_DAMPING;
-    var _ouroboros = settings.ouroboros || DEFAULT_OUROBOROS;
     
     // VARS FOR THE WAVE PDE
     var u = new Float32Array(_n); // value of wave at each sample idx
@@ -145,14 +143,8 @@ function wave(settings) {
         }
 
         // cheat to send the first and last sample
-        if (_ouroboros) {
-            var step = (u[1] - u[_n - 2]) / 3;
-            u[_n - 1] = u[_n - 2] + step;
-            u[0] = u[_n - 1] + step;
-        } else {
-            u[_n - 1] = u[_n - 2];
-            u[0] = u[1];
-        }
+        u[_n - 1] = u[_n - 2];
+        u[0] = u[1];
     };
 
     /**
@@ -171,7 +163,7 @@ function wave(settings) {
         var gaussConstant = Math.max(0.001 / Math.abs(peak), 0.01);
         var halfNumSamples = Math.floor(_n / 2);
         for(var i = -halfNumSamples; i < halfNumSamples; i++) {
-            if(!_ouroboros && (ix + i < 0 || ix + i > _n)) {
+            if(ix + i < 0 || ix + i > _n) {
                 continue;
             }
             var sampleIdx = (ix + i) % _n;
