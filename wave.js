@@ -3,6 +3,7 @@
  * @property {number} numSamples
  * @property {number} splashiness
  * @property {number} damping
+ * @property {boolean} wrap
  * @property {Array.<ChildWaveSettings>} children
  */
 
@@ -24,7 +25,7 @@ var DEFAULT_CHILDREN = [
     {period: 0.5, amplitude: 0.6},
     {period: 0.3, amplitude: 0.2}
 ];
-var DEFAULT_OUROBOROS = false;
+var DEFAULT_WRAP = false;
 
 
 /**
@@ -41,6 +42,7 @@ function wave(settings) {
     var _children = _normalizeAmplitudes(settings.children) || DEFAULT_CHILDREN;
     var _splashiness = settings.splashiness || DEFAULT_SPLASHINESS;
     var _damping = settings.damping || DEFAULT_DAMPING;
+    var _wrap = settings.wrap || DEFAULT_WRAP;
     
     // VARS FOR THE WAVE PDE
     var u = new Float32Array(_n); // value of wave at each sample idx
@@ -122,6 +124,10 @@ function wave(settings) {
             u_x[i] = (u[i + 1] - u[i]) / dx;
         }
 
+        if (_wrap) {
+            u_x[_n - 1] = (u[0] - u[_n - 1]) / dx;
+        }
+
         var c2 = _splashiness * _splashiness; // Constant C^2
         for (var i = 0; i < _n - 2; i++) {
             // compute second derivative wrt x
@@ -131,10 +137,23 @@ function wave(settings) {
             u_tt[i] = c2 * u_xx_i;
         }
 
+        if (_wrap) {
+            u_tt[_n - 2] = c2 * (u_x[_n - 1] - u_x[_n - 2]) / dx;
+            u_tt[_n - 1] = c2 * (u_x[0] - u_x[_n - 1]) / dx;
+        }
+
         // update u_t according to u_tt
         for (var i = 1; i < _n - 1; i++) {
             u_t[i] += u_tt[i - 1] * dt;
             u_t[i] *= _damping;
+        }
+        
+        if (_wrap) {
+            u_t[0] += u_tt[_n - 1] * dt;
+            u_t[0] *= _damping;
+
+            u_t[_n - 1] += u_tt[_n - 2] * dt;
+            u_t[_n - 1] *= _damping;
         }
 
         // update u
@@ -142,9 +161,12 @@ function wave(settings) {
             u[i] += u_t[i] * dt;
         }
 
-        // cheat to send the first and last sample
-        u[_n - 1] = u[_n - 2];
-        u[0] = u[1];
+        // If there is no wrapping, then cheat missing u_t values
+        // by copying wave heights at the edges
+        if (!_wrap) {
+            u[_n - 1] = u[_n - 2];
+            u[0] = u[1];
+        }
     };
 
     /**
@@ -163,7 +185,7 @@ function wave(settings) {
         var gaussConstant = Math.max(0.001 / Math.abs(peak), 0.01);
         var halfNumSamples = Math.floor(_n / 2);
         for(var i = -halfNumSamples; i < halfNumSamples; i++) {
-            if(ix + i < 0 || ix + i > _n) {
+            if(!_wrap && (ix + i < 0 || ix + i > _n)) {
                 continue;
             }
             var sampleIdx = (ix + i) % _n;
