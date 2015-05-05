@@ -90,6 +90,7 @@ When wave is invoked with no arguments, the default settings are used. But you c
 | `numSamples` | `100` | The number of samples that the wave will consist of. |
 | `splashiness`| `0.01` | This is the constant used in the one-dimensional wave PDE, descripted [here](#implementation). Higher value will mean faster propagation and more exaggerated splashes. |
 | `damping` | `0.995` | This value is multiplied to the wave's velocity for each time step, so that a splash will eventually die down. If the damping is det to `1`, the wave will keep on splashing forever. |
+| `wrap` | `false` | If `true`, the wave will act as if its ends are connected. |
 | `children`   | `[{period: 0.25, amplitude: 0.2}, {period: 0.5, amplitude: 0.6}, {period: 0.3, amplitude: 0.2}]` | This is what the wave is made out of when `churn` is called. Each child wave is shifted to the correct phase and added on top of each other to create an organic turbulence across the wave. The units are in wave-space x and y, where x spans 0 to 1 and y spans -1 to 1. The amplitudes are normalized to add up to 1. |
 
 Here's an example that creates a wave that's splashier than the default but dies down faster, with a more complex churn:
@@ -110,7 +111,9 @@ var w = wave({
 ## Demos
 
 [Hello Wave](http://jiwonk.im/wave/demos/hello-wave.html)
+
 [Surfing Duckies](http://jiwonk.im/wave/demos/surfing-duckies.html)
+
 [Wobble the Bubble](http://jiwonk.im/wave/demos/bubble.html)
 
 ## Implementation
