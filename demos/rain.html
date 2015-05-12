@@ -1,0 +1,194 @@
+<html>
+    <meta charset="UTF-8">
+    <head>
+        <title>Make It Rain</title>
+        <script src="../jquery-1.11.2.min.js"></script>
+        <script src="../wave.js"></script>
+        <script>
+$(document).ready(function() {
+    var t_0 = new Date().getTime() / 1000;
+    var t = 0;
+    var NUM_SAMPLES = 500;
+    var NUM_RAIN_DROPS = 25;
+    var canvas = document.getElementById('rain-canvas');
+    var context = canvas.getContext('2d');
+    var width = canvas.width;
+    var height = canvas.height;
+
+    var rain = [];
+    for (var i = 0; i < NUM_RAIN_DROPS; i++) {
+        rain.push(raindrop());
+    }
+
+    var ground = wave({numSamples: NUM_SAMPLES});
+
+    requestAnimationFrame(frame);
+
+    function frame() {
+        physics();
+        render();
+        requestAnimationFrame(frame);
+    }
+
+    function physics() {
+        var t_now = new Date().getTime() / 1000 - t_0; // time in seconds
+        while(t < t_now) {
+            ground.tick(0.2);
+            for (var i = 0; i < rain.length; i++) {
+                rain[i].drop(0.1);
+                var groundHeight = ground.height(Math.floor(rain[i].x() * NUM_SAMPLES));
+                if (rain[i].y() * height >= waveToCanvasCoordinates(0, groundHeight).y) {
+                    ground.splash(rain[i].x(), -rain[i].vy() * 2, 0.2);
+                    rain[i].reset();
+                }
+            }
+            t += 0.01;
+        }
+    }
+
+    function render() {
+        context.clearRect(0, 0, width, height);
+
+        // pre-computed dimensions for rendering
+        var base = 0.5 * height;
+        var unitWidth = width / (NUM_SAMPLES - 1); // dx per sample in pixels
+
+        // Compute the points that make up the wave surface and the bowl angles
+        var points = []
+        for(var i = 0; i < NUM_SAMPLES; i++) {
+            var x = i * unitWidth;
+            var coords =  waveToCanvasCoordinates(i / NUM_SAMPLES, ground.height(i));
+            points.push([coords.x, coords.y])
+        }
+
+        // Draw the path
+        context.beginPath();
+        context.moveTo(points[0][0], points[0][1]);
+        points.forEach(function(point) {
+            context.lineTo(point[0], point[1]);
+        })
+        context.stroke();
+
+        for (var i = 0; i < rain.length; i++) {
+            context.beginPath();
+            context.moveTo(
+                rain[i].x() * width,
+                rain[i].y() * height
+            );
+            context.lineTo(
+                rain[i].x() * width,
+                rain[i].y() * height - rain[i].vy() * 500
+            );
+            context.strokeStyle = rain[i].color();
+            context.lineWidth = 2;
+            context.stroke();
+        }
+    }
+
+    function canvasToWaveCoordinates(x, y) {
+        return {
+            x: x / width,
+            y: -2 * (y / height - 0.5)
+        };
+    }
+
+    function waveToCanvasCoordinates(x, y) {
+        return {
+            x: x * width,
+            y: (y / -2 + 0.5) * height
+        }
+    }
+
+    function raindrop() {
+        var _x = Math.random();
+        var _y = Math.random() * 0.3;
+        var _vx = 0;
+        var _vy = Math.random() * 0.02 + 0.05;
+
+        var _r = Math.floor(255 * Math.random());
+        var _g = Math.floor(255 * Math.random());
+        var _b = 255;
+        var _color = ['rgba(', _r, ',', _g, ',', _b, ', 0.5)'].join('');
+        
+        function drop(dt) {
+            _y += _vy * dt;
+            _x += _vx * dt;
+        }
+
+        function reset() {
+            _x = Math.random();
+            _y = 0;
+            _r = Math.floor(255 * Math.random());
+            _g = Math.floor(255 * Math.random());
+            _b = 255;
+            _color = ['rgba(', _r, ',', _g, ',', _b, ', 0.5)'].join('');
+        }
+
+        function x() {
+            return _x;
+        }
+
+        function y() {
+            return _y;
+        }
+
+        function vy() {
+            return _vy;
+        }
+
+        function color() {
+            return _color;
+        }
+
+        return {
+            drop: drop,
+            reset: reset,
+            x: x,
+            y: y,
+            vy: vy,
+            color: color
+        }
+    }
+});
+        </script>
+        <style>
+            html {
+                overflow: hidden;
+            }
+            body {
+                font-family: "Helvetica Neue", Helvetica, sans-serif;
+                margin: 0;
+                background-color: #111;
+            }
+
+            #h1-wrapper {
+                position: absolute;
+                width: 100vw;
+                bottom: 0px;
+                text-align: center;
+            }
+
+            h1 {
+                font-size: 4em;
+                font-weight: 100;
+                color: #fdddff;
+            }
+
+            canvas {
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                outline: none;
+                -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="rain-canvas" width="1000" height="800"></canvas>
+        <div id="h1-wrapper">
+            <h1>make it rain! ☂</h1>
+        </div>
+    </body>
+</html>
