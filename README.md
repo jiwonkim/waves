@@ -116,6 +116,9 @@ var w = wave({
 
 [Wobble the Bubble](http://jiwonk.im/wave/demos/bubble.html)
 
+[Make It Rain!](http://jiwonk.im/wave/demos/rain.html)
+
+
 ## Implementation
 
 ### Step 1: Grab the PDE for a one dimensional wave
