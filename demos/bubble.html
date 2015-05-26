@@ -29,6 +29,16 @@ $(document).ready(function() {
         wrap: true
     });
 
+    var superSecretNSFWToggle = false;
+    $('#nsfw-toggle').click(function() {
+        superSecretNSFWToggle = !superSecretNSFWToggle;
+        if (superSecretNSFWToggle) {
+            $(this).text('Boob');
+        } else {
+            $(this).text('Bubble');
+        }
+    });
+
     $(canvas).click(function(evt) {
         // tranlate offset into bubble coords, where the
         // origin is at the center of the bubble / canvas
@@ -79,8 +89,12 @@ $(document).ready(function() {
         context.translate(width/2, height/2);
         context.save()
 
-        drawSmile(unitTheta);
-        drawEyes(unitTheta);
+        if (superSecretNSFWToggle) {
+            drawNipple(unitTheta);
+        } else {
+            drawSmile(unitTheta);
+            drawEyes(unitTheta);
+        }
         drawBubble(unitTheta);
 
         // Set the current transformation on the context back to
@@ -141,6 +155,35 @@ $(document).ready(function() {
         context.stroke();
     }
 
+    function drawNipple(unitTheta) {
+        context.restore();
+        context.save();
+
+        context.beginPath();
+
+        var stiffness = 0.3;
+        var rnip = Math.min(width, height) * 0.03;
+        context.moveTo(rnip + w.height(0) * rnip * stiffness, 0);
+        for (var i = 1; i < NUM_SAMPLES; i++) {
+            context.rotate(unitTheta);
+            context.lineTo(rnip + w.height(i) * rnip * stiffness, 0);
+        }
+        context.closePath();
+        context.fillStyle = 'rgba(190, 90, 50, 0.8)';
+        context.fill();
+
+        stiffness = 0.6;
+        var raureola = Math.min(width, height) * 0.1;
+        context.beginPath();
+        context.moveTo(raureola + w.height(0) * raureola * stiffness, 0);
+        for (var i = 1; i < NUM_SAMPLES; i++) {
+            context.rotate(unitTheta);
+            context.lineTo(raureola + w.height(i) * raureola * stiffness, 0);
+        }
+        context.closePath();
+        context.fillStyle = 'rgba(190, 90, 50, 0.6)';
+        context.fill();
+    }
 });
 </script>
 <style>
@@ -181,10 +224,18 @@ code {
     text-align: left;
     font-family: Andale Mono, sans-serif;
 }
+
+#nsfw-toggle {
+    cursor: pointer;
+}
+
+#nsfw-toggle:hover {
+    color: rgba(200, 90, 50, 0.8);
+}
 </style>
 </head>
 <body>
-<h1 class="no-select">Wobble the Bubble</h1>
+<h1 class="no-select">Wobble the <a id="nsfw-toggle">Bubble</a></h1>
 <canvas id="bubble-canvas" class="no-select" width="500px" height="500px"></canvas>
 <h2>Sauce</h2>
 <pre><code id="sauce" class="hljs javascript"></code></pre>
