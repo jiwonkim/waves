@@ -10,6 +10,11 @@
 <script>
 hljs.initHighlightingOnLoad();
 $(document).ready(function() {
+    $('#sauce').text($('#demo-script').text().trim());
+});
+</script>
+<script id="demo-script">
+$(document).ready(function() {
     var NUM_SAMPLES = 100;
 
     var canvas = document.getElementById('bubble-canvas');
@@ -182,133 +187,6 @@ code {
 <h1 class="no-select">Wobble the Bubble</h1>
 <canvas id="bubble-canvas" class="no-select" width="500px" height="500px"></canvas>
 <h2>Sauce</h2>
-<pre><code class="hljs javascript">$(document).ready(function() {
-    var NUM_SAMPLES = 100;
-
-    var canvas = document.getElementById('bubble-canvas');
-    var context = canvas.getContext('2d');
-
-    var width = canvas.width;
-    var height = canvas.height;
-    var r = Math.min(width, height) / 3;
-
-    var w = wave({
-        numSamples: NUM_SAMPLES,
-        wrap: true
-    });
-
-    $(canvas).click(function(evt) {
-        // tranlate offset into bubble coords, where the
-        // origin is at the center of the bubble / canvas
-        var x, y;
-        x = evt.offsetX - width/2;
-        y = -evt.offsetY + height/2;
-
-        // compute the x [0, 1] where the splash should happen
-        var theta = Math.atan2(y, x);
-        var splashX;
-        if (theta > 0) {
-            splashX = 1 - 0.5 * theta / Math.PI;
-        } else {
-            splashX = -0.5 * theta / Math.PI;
-        }
-
-        var strength = 0.5;
-        if (context.isPointInPath(evt.offsetX, evt.offsetY)) {
-            strength *= -1; // splash inwards if cursur is inside bubble
-        }
-
-        // Create a splash and some churn for dynamic effect
-        w.splash(splashX, 1, strength/2);
-        w.churn(splashX, 1, strength);
-    });
-
-    // Strat the rendering loop
-    requestAnimationFrame(frame);
-
-    function frame() {
-        for (var i = 0; i < 10; i++) {
-            w.tick(0.1);
-        }
-        renderWave();
-        requestAnimationFrame(frame);
-    }
-
-    function renderWave() {
-        var unitTheta = Math.PI * 2 / NUM_SAMPLES;
-
-        // we're drawing destination-over so that we can draw the bubble
-        // at the end, which means we can use isPointInPath after each
-        // rendering to check if a point is inside the bubble or not
-        context.globalCompositeOperation = 'destination-over';
-        context.lineWidth = 2;
-
-        context.clearRect(0, 0, width, height);
-        context.translate(width/2, height/2);
-        context.save()
-
-        drawSmile(unitTheta);
-        drawEyes(unitTheta);
-        drawBubble(unitTheta);
-
-        // Set the current transformation on the context back to
-        // what we started with
-        context.setTransform(1, 0, 0, 1, 0, 0);
-    }
-
-    // Draw a wobbling smile that spans x=0.025 to x=0.475
-    function drawSmile(unitTheta) {
-        var startIdx = Math.floor((NUM_SAMPLES / 2) * 0.05);
-        var endIdx = Math.floor((NUM_SAMPLES / 2) * 0.95);
-
-        context.beginPath();
-        context.rotate(startIdx * unitTheta);
-        context.moveTo(r/2 + w.height(startIdx) * r/2, 0);
-
-        for (var i = startIdx + 1; i < endIdx; i++) {
-            context.rotate(unitTheta);
-            context.lineTo(r/2 + w.height(i) * r/2, 0);
-        }
-        context.stroke();
-    }
-
-    // Draw a pair of wobbling eyes at x=0.6 and x=0.9
-    function drawEyes(unitTheta) {
-        context.restore();
-        context.save();
-
-        context.fillStyle = 'black';
-        context.beginPath();
-
-        context.rotate(unitTheta * NUM_SAMPLES * 0.6);
-        context.arc(r/2 * w.height(Math.floor(NUM_SAMPLES * 0.6)) + r/2, 0, 5, 0, Math.PI * 2, false);
-        context.fill();
-
-        context.rotate(unitTheta * NUM_SAMPLES * 0.3);
-        context.arc(r/2 * w.height(Math.floor(NUM_SAMPLES * 0.9)) + r/2, 0, 5, 0, Math.PI * 2, false);
-        context.fill();
-    }
-
-    function drawBubble(unitTheta) {
-        context.restore();
-
-        context.beginPath();
-        context.moveTo(r + w.height(0) * r, 0);
-
-        for (var i = 1; i < NUM_SAMPLES; i++) {
-            context.rotate(unitTheta);
-            context.lineTo(r + w.height(i) * r, 0);
-        }
-        context.closePath();
-
-        var gradient = context.createRadialGradient(0, 0, 0, 0, 0, r*2);
-        gradient.addColorStop(0, 'rgba(200, 90, 50, 0.1)');
-        gradient.addColorStop(1, 'rgba(200, 90, 50, 0.5)');
-        context.fillStyle = gradient;
-        context.fill();
-        context.stroke();
-    }
-
-});</code></pre>
+<pre><code id="sauce" class="hljs javascript"></code></pre>
 <body>
 </html>
